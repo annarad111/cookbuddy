@@ -1,8 +1,18 @@
 import { create } from 'zustand';
 
+export type Ingredient={
+    id: string,
+    name: string,
+    amount: string
+}
+
 export type Receipe = {
     id: string,
     title: string,
+    image?: string,
+    servings: number,
+    ingredients: Ingredient[],
+    steps: string,
 }
 
 type ReceipeState = {
