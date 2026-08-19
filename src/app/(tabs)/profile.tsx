@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
+import { View, Text, Pressable, StyleSheet, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth-store";
@@ -16,9 +16,10 @@ export default function Profile() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.avatar}>
-        <Text style={styles.avatarText}>
-          {session?.user.email?.[0].toUpperCase()}
-        </Text>
+        <Image
+          source={require("../../../assets/images/9.png")}
+          style={styles.avatarImage}
+        />
       </View>
       <Text style={styles.email}>{session?.user.email}</Text>
 
@@ -37,14 +38,20 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     gap: 12,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#FF8A65",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+ avatar: {
+  width: 140,
+  height: 140,
+  borderRadius: 140,
+  backgroundColor: "#FF8A65",
+  justifyContent: "flex-end",
+  alignItems: "center",
+  overflow: "visible",
+},
+avatarImage: {
+  width: 180,
+  height: 200,
+  resizeMode: "contain",
+},
   avatarText: {
     color: "white",
     fontSize: 32,

@@ -1,19 +1,27 @@
 import { useLocalSearchParams } from "expo-router";
-import { useReceipeStore } from "@/store/receipe-store";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import { Receipe, useReceipeStore } from "@/store/receipe-store";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import ImagePickerInput from "@/components/ImagePickerInput";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 export default function ReceipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const toggleFavorite = useReceipeStore((state) => state.toggleFavorite);
+  const removeReceipe = useReceipeStore((state) => state.removeReceipe);
   const receipe = useReceipeStore((state) =>
     state.receipes.find((item) => item.id === id),
   );
   const updateReceipe = useReceipeStore((state) => state.updateReceipe);
-  console.log(receipe);
 
   if (!receipe) {
     return (
@@ -23,29 +31,69 @@ export default function ReceipeDetail() {
     );
   }
 
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete recipe",
+      "Are you sure you want to delete this recipe? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await removeReceipe(receipe.id);
+            router.back();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Link href="/" asChild>
-          <Pressable>
-            <Text>Return</Text>
-          </Pressable>
-        </Link>
-        <Pressable
-          onPress={() => toggleFavorite(receipe.id)}
-          style={styles.favoriteButton}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            padding: 15,
+          }}
         >
-          <Ionicons
-            name={receipe.is_favorite ? "heart" : "heart-outline"}
-            size={22}
-            color="#FF8A65"
-          />
-        </Pressable>
+          <Link href="/" asChild>
+            <Pressable
+              style={{
+                backgroundColor: "#ffffff91",
+                padding: 10,
+                borderRadius: 100,
+              }}
+            >
+              <Ionicons name="chevron-back-outline" size={24} color="#3A3A3A" />
+            </Pressable>
+          </Link>
+
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Pressable onPress={handleDelete} style={styles.favoriteButton}>
+              <Ionicons name="trash-outline" size={22} color="#E24B4A" />
+            </Pressable>
+            <Pressable
+              onPress={() => toggleFavorite(receipe.id)}
+              style={styles.favoriteButton}
+            >
+              <Ionicons
+                name={receipe.is_favorite ? "heart" : "heart-outline"}
+                size={22}
+                color="#FF8A65"
+              />
+            </Pressable>
+          </View>
+        </View>
+
         <ImagePickerInput
           image={receipe.image_url ?? ""}
+          width={"100%"}
           onChange={(uri) => updateReceipe(receipe.id, { image_url: uri })}
         />
         <View style={styles.detailsContainer}>
@@ -170,6 +218,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   favoriteButton: {
-    padding: 8,
+    padding: 11,
+    backgroundColor: "#ffffff91",
+    borderRadius: 100,
   },
 });

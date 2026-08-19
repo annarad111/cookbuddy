@@ -15,7 +15,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <RecipeList data={receipes} emptyMessage="You have no recipes yet, let's start creating them !" />
+      <RecipeList data={receipes} emptyMessage={`No recipes yet,\n Let's start creating them!`} />
       <Link href="/new-receipe" asChild>
         <Pressable style={styles.addButton}>
           <Text style={styles.buttonText}>+</Text>

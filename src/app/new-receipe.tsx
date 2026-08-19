@@ -6,7 +6,8 @@ import {
   Text,
   ScrollView,
   View,
-  Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
@@ -34,103 +35,106 @@ export default function NewReceipe() {
   const handleSave = async () => {
     setSaving(true);
     let imageUrl = receipe.image_url;
-    console.log("Image URI inițial:", receipe.image_url);
 
     if (receipe.image_url && !receipe.image_url.includes("supabase.co")) {
-      console.log("Încep upload...");
       const uploadedUrl = await uploadImage(receipe.image_url);
-      console.log("Rezultat upload:", uploadedUrl);
       if (uploadedUrl) {
         imageUrl = uploadedUrl;
       } else {
         imageUrl = "";
       }
     } else {
-      console.log("Nu se face upload — condiția nu a fost îndeplinită");
+      console.log("Error");
     }
 
-    console.log("Image URL final trimis la addReceipe:", imageUrl);
     await addReceipe({ ...receipe, image_url: imageUrl });
     setSaving(false);
     router.back();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <TextInput
-          style={styles.input}
-          value={receipe.title}
-          placeholderTextColor="#7c7474"
-          onChangeText={(value) =>
-            setReceipe({ ...receipe, id: id, title: value })
-          }
-          placeholder="Receipe name"
-        />
-        <ImagePickerInput
-          image={receipe.image_url ?? ""}
-          onChange={(uri) => setReceipe({ ...receipe, image_url: uri })}
-        />
-        <Text style={styles.title}>Ingredients</Text>
-        <View
-          style={{ flexDirection: "row", width: "90%", margin: "auto", gap: 5 }}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
           <TextInput
-            keyboardType="numeric"
             style={styles.input}
-            value={receipe.servings === 0 ? "" : String(receipe.servings)}
-            onChangeText={(value) =>
-              setReceipe({ ...receipe, servings: Number(value) })
-            }
-            placeholder="Servings"
+            value={receipe.title}
             placeholderTextColor="#7c7474"
+            onChangeText={(value) =>
+              setReceipe({ ...receipe, id: id, title: value })
+            }
+            placeholder="Receipe name"
+          />
+          <ImagePickerInput
+            image={receipe.image_url ?? ""}
+            onChange={(uri) => setReceipe({ ...receipe, image_url: uri })}
+          />
+          <Text style={styles.title}>Ingredients</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              width: "90%",
+              margin: "auto",
+              gap: 5,
+            }}
+          >
+            <TextInput
+              keyboardType="numeric"
+              style={styles.rowInput}
+              value={receipe.servings === 0 ? "" : String(receipe.servings)}
+              onChangeText={(value) =>
+                setReceipe({ ...receipe, servings: Number(value) })
+              }
+              placeholder="Servings"
+              placeholderTextColor="#7c7474"
+            />
+
+            <TextInput
+              keyboardType="numeric"
+              style={styles.rowInput}
+              value={receipe.time === 0 ? "" : String(receipe.time)}
+              onChangeText={(value) =>
+                setReceipe({ ...receipe, time: Number(value) || 0 })
+              }
+              placeholder="Time (min)"
+              placeholderTextColor="#7c7474"
+            />
+          </View>
+
+          <IngridientInput
+            ingredients={receipe.ingredients}
+            onChange={(ingredients) => setReceipe({ ...receipe, ingredients })}
+          />
+          <Text style={styles.title}>Steps</Text>
+          <TextInput
+            style={styles.textarea}
+            value={receipe.steps}
+            onChangeText={(value) => setReceipe({ ...receipe, steps: value })}
+            placeholder="Describe each step..."
+            placeholderTextColor="#7c7474"
+            multiline
+            numberOfLines={5}
           />
 
           <TextInput
-            keyboardType="numeric"
             style={styles.input}
-            value={receipe.time === 0 ? "" : String(receipe.time)}
-            onChangeText={(value) =>
-              setReceipe({ ...receipe, time: Number(value) || 0 })
-            }
-            placeholder="Time (min)"
+            value={receipe.notes}
+            onChangeText={(value) => setReceipe({ ...receipe, notes: value })}
+            placeholder="Notes (optional)"
             placeholderTextColor="#7c7474"
           />
-        </View>
 
-        <IngridientInput
-          ingredients={receipe.ingredients}
-          onChange={(ingredients) => setReceipe({ ...receipe, ingredients })}
-        />
-        <Text style={styles.title}>Steps</Text>
-        <TextInput
-          style={styles.textarea}
-          value={receipe.steps}
-          onChangeText={(value) => setReceipe({ ...receipe, steps: value })}
-          placeholder="Describe each step..."
-          placeholderTextColor="#7c7474"
-          multiline
-          numberOfLines={5}
-        />
-
-        <TextInput
-          style={styles.input}
-          value={receipe.notes}
-          onChangeText={(value) => setReceipe({ ...receipe, notes: value })}
-          placeholder="Notes (optional)"
-          placeholderTextColor="#7c7474"
-        />
-
-        <Pressable style={styles.button} onPress={handleSave}>
-          <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
-            {saving ? "Saving..." : "Save Recipe 🥕"}
-          </Text>
-        </Pressable>
-      </ScrollView>
-    </SafeAreaView>
+          <Pressable style={styles.button} onPress={handleSave}>
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              {saving ? "Saving..." : "Save Recipe 🥕"}
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -158,17 +162,19 @@ const styles = StyleSheet.create({
     margin: "auto",
   },
   input: {
-    backgroundColor: "#fffefe",
+    backgroundColor: "#F5F5F5",
     borderRadius: 16,
-    paddingVertical: 18,
+    paddingVertical: 14,
     paddingHorizontal: 18,
     fontSize: 16,
     color: "#1A1A1A",
     borderWidth: 1,
-    borderColor: "#ffffff",
-    width: "90%",
-    margin: "auto",
-    marginBottom: 5,
+    borderColor: "#E0E0E0",
+    flex: 1,
+    width: '90%',
+    margin: 'auto',
+    marginBottom: 15,
+    marginTop: 15,
   },
   scrollContent: {
     paddingTop: 18,
@@ -194,6 +200,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginLeft: 27,
     marginBottom: 10,
-    marginTop: 10,
+    marginTop: 5,
+  },
+
+  rowInput: {
+    backgroundColor: "#fffefe",
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    fontSize: 16,
+    color: "#1A1A1A",
+    borderWidth: 1,
+    borderColor: "#ffffff",
+    flex: 1,
   },
 });

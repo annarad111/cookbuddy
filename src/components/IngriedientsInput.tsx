@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     color: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    width: "50%",
+    flex: 1
   },
   row: {
     flexDirection: "row",
@@ -97,6 +97,8 @@ const styles = StyleSheet.create({
   addBtn: {
     color: "#FF8A65",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 19,
+    margin: 10,
+    fontFamily: "Baloo2_700Bold"
   },
 });

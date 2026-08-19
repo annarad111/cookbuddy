@@ -2,6 +2,8 @@ import "react-native-url-polyfill/auto";
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
+import * as FileSystem from "expo-file-system/legacy";
+import { decode } from "base64-arraybuffer";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
@@ -17,13 +19,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 export const uploadImage = async (uri: string): Promise<string | null> => {
   try {
-    const response = await fetch(uri);
-    const blob = await response.blob();
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
     const fileName = `${Date.now()}.jpg`;
+    const arrayBuffer = decode(base64);
 
     const { error } = await supabase.storage
       .from("recipe-images")
-      .upload(fileName, blob, { contentType: "image/jpeg" });
+      .upload(fileName, arrayBuffer, { contentType: "image/jpeg" });
 
     if (error) {
       console.error("Upload error:", error);

@@ -6,16 +6,18 @@ import {
   Image,
   StyleSheet,
   Alert,
+  DimensionValue,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 
 type Props = {
   image: string;
+  width?: DimensionValue;
   onChange: (uri: string) => void;
 };
 
-export default function ImagePickerInput({ image, onChange }: Props) {
+export default function ImagePickerInput({ image, onChange, width = '85%' }: Props) {
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -40,7 +42,7 @@ export default function ImagePickerInput({ image, onChange }: Props) {
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={pickImage}>
+    <TouchableOpacity style={[styles.container, { width }]} onPress={pickImage}>
       {image ? (
         <Image source={{ uri: image }} style={styles.image} />
       ) : (
@@ -58,7 +60,6 @@ export default function ImagePickerInput({ image, onChange }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    width: "85%",
     height: 200,
     borderRadius: 16,
     borderWidth: 1.5,

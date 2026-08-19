@@ -9,7 +9,7 @@ export default function Favorites() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <RecipeList data={favorites} emptyMessage="No favorites yet — tap the heart on a recipe to add it here." />
+      <RecipeList data={favorites} emptyMessage={`No favorites yet,\nlet's start creating them!`} />
     </SafeAreaView>
   );
 }

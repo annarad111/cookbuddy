@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { View, TextInput, Text, Pressable, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  TextInput,
+  Text,
+  Pressable,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function CreateAccount() {
   const [email, setEmail] = useState("");
@@ -15,16 +23,21 @@ export default function CreateAccount() {
     });
 
     if (error) {
-      Alert.alert("Eroare", error.message);
+      Alert.alert("Error", error.message);
       return;
     }
 
-    console.log("User creat:", data.user);
-    Alert.alert("Succes", "Cont creat cu succes!");
+    Alert.alert("Succes", "Account created!");
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <Pressable
+        style={{ backgroundColor: "#ffffff91", padding: 10, borderRadius: 100 }}
+        onPress={() => router.back()}
+      >
+        <Ionicons name="chevron-back-outline" size={24} color="#3A3A3A" />
+      </Pressable>
       <Text style={styles.title}>Create account</Text>
       <TextInput
         style={styles.input}

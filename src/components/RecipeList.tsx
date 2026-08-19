@@ -1,4 +1,11 @@
-import { FlatList, View, Text, Image, Pressable, StyleSheet } from "react-native";
+import {
+  FlatList,
+  View,
+  Text,
+  Image,
+  Pressable,
+  StyleSheet,
+} from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipeStore, Receipe } from "@/store/receipe-store";
@@ -14,7 +21,13 @@ export default function RecipeList({ data, emptyMessage }: Props) {
   if (data.length === 0) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>{emptyMessage}</Text>
+        <View >
+          <Image
+          style={{width: 200, height:180, resizeMode: 'contain'}}
+            source={require("../../assets/images/5.png")}
+          />
+        </View>
+        <Text style={{textAlign:'center', fontSize: 18, fontFamily: "Baloo2_700Bold"}}>{emptyMessage}</Text>
       </View>
     );
   }
@@ -35,14 +48,23 @@ export default function RecipeList({ data, emptyMessage }: Props) {
             </View>
           )}
           <Pressable
-            onPress={() => router.push({ pathname: "/receipe/[id]", params: { id: item.id } })}
+            onPress={() =>
+              router.push({
+                pathname: "/receipe/[id]",
+                params: { id: item.id },
+              })
+            }
             style={{ flex: 1 }}
           >
             <View style={{ marginTop: 10, flexDirection: "column", gap: 10 }}>
               <Text style={styles.title}>{item.title}</Text>
               <View style={styles.timeContainer}>
                 <Text style={styles.subtitle}>
-                  <Ionicons name="restaurant-outline" size={18} color="#A8635A" />
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={18}
+                    color="#A8635A"
+                  />
                   {item.servings}
                 </Text>
                 <Text style={styles.subtitle}>
@@ -52,8 +74,15 @@ export default function RecipeList({ data, emptyMessage }: Props) {
               </View>
             </View>
           </Pressable>
-          <Pressable onPress={() => toggleFavorite(item.id)} style={styles.favoriteButton}>
-            <Ionicons name={item.is_favorite ? "heart" : "heart-outline"} size={22} color="#FF8A65" />
+          <Pressable
+            onPress={() => toggleFavorite(item.id)}
+            style={styles.favoriteButton}
+          >
+            <Ionicons
+              name={item.is_favorite ? "heart" : "heart-outline"}
+              size={22}
+              color="#FF8A65"
+            />
           </Pressable>
         </View>
       )}
@@ -76,8 +105,8 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 15, color: "#A8635A" },
   image: { width: 80, height: 80, borderRadius: 12 },
   placeholder: {
-    width: 56,
-    height: 56,
+    width: 80,
+    height: 80,
     borderRadius: 12,
     backgroundColor: "#F5F5F5",
     justifyContent: "center",
