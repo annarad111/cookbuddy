@@ -57,16 +57,16 @@ export default function IngridientInput({ ingredients, onChange }: Props) {
             value={item.amount}
             onChangeText={(text) => updateIngredients(item.id, "amount", text)}
           ></TextInput>
-          <View>
-            <TouchableOpacity onPress={() => removeIngredients(item.id)}>
-              <Text style={{ color: "red" }}>✕</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={addIngredients}>
-              <Text style={{ color: "blue", fontSize: 30 }}>+</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={() => removeIngredients(item.id)}>
+            <Text style={{ color: "red", fontWeight: "bold", margin: "auto" }}>
+              ✕
+            </Text>
+          </TouchableOpacity>
         </View>
       ))}
+      <TouchableOpacity onPress={addIngredients}>
+        <Text style={styles.addBtn}>+ Add ingredient</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -75,6 +75,8 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "column",
     justifyContent: "space-around",
+    width: "90%",
+    margin: "auto",
   },
   input: {
     backgroundColor: "#F5F5F5",
@@ -85,11 +87,16 @@ const styles = StyleSheet.create({
     color: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    width: 130,
+    width: "50%",
   },
   row: {
     flexDirection: "row",
     gap: 8,
     marginBottom: 8,
+  },
+  addBtn: {
+    color: "#FF8A65",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

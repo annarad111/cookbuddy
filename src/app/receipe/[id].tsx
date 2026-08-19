@@ -1,14 +1,19 @@
 import { useLocalSearchParams } from "expo-router";
 import { useReceipeStore } from "@/store/receipe-store";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
+import ImagePickerInput from "@/components/ImagePickerInput";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ReceipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const toggleFavorite = useReceipeStore((state) => state.toggleFavorite);
   const receipe = useReceipeStore((state) =>
-    state.receipes.find((r) => r.id === id),
+    state.receipes.find((item) => item.id === id),
   );
+  const updateReceipe = useReceipeStore((state) => state.updateReceipe);
+  console.log(receipe);
 
   if (!receipe) {
     return (
@@ -20,28 +25,151 @@ export default function ReceipeDetail() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>{receipe.title}</Text>
-      <Text>Servings: {receipe.servings}</Text>
-      <Text>
-        Ingredients:
-        {receipe.ingredients.map((item) => (
-          <View key={item.id}>
-            <Text>{item.name}</Text>
-            <Text>{item.amount}</Text>
-          </View>
-        ))}
-      </Text>
-
-      <Link href="/" asChild>
-        <Pressable>
-          <Text>Return</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Link href="/" asChild>
+          <Pressable>
+            <Text>Return</Text>
+          </Pressable>
+        </Link>
+        <Pressable
+          onPress={() => toggleFavorite(receipe.id)}
+          style={styles.favoriteButton}
+        >
+          <Ionicons
+            name={receipe.is_favorite ? "heart" : "heart-outline"}
+            size={22}
+            color="#FF8A65"
+          />
         </Pressable>
-      </Link>
+        <ImagePickerInput
+          image={receipe.image_url ?? ""}
+          onChange={(uri) => updateReceipe(receipe.id, { image_url: uri })}
+        />
+        <View style={styles.detailsContainer}>
+          <Text style={styles.title}>{receipe.title}</Text>
+          <Text>
+            A cozy weeknight classic, ready in under {receipe.time} minutes.
+          </Text>
+          <View style={styles.timeContainer}>
+            <Text style={styles.timeBox}>Servings: {receipe.servings}</Text>
+            <Text style={styles.timeBox}>Time: {receipe.time}</Text>
+          </View>
+
+          <Text>
+            <Text style={styles.subTitle}>Ingredients:</Text>
+
+            {receipe.ingredients.map((item) => (
+              <View key={item.id} style={styles.ingredients}>
+                <Text style={styles.ingredient}>{item.name}</Text>
+                <Text style={styles.ingredient}>{item.amount}</Text>
+              </View>
+            ))}
+          </Text>
+          <View style={styles.steps}>
+            <Text style={styles.subTitle}>Steps</Text>
+            {receipe.steps
+              .split("\n")
+              .filter((step) => step.trim() !== "")
+              .map((step, index) => (
+                <View key={index} style={styles.stepRow}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.stepText}>{step}</Text>
+                </View>
+              ))}
+          </View>
+
+          <View style={styles.steps}>
+            <Text style={styles.subTitle}>Notes </Text>
+            <Text
+              style={{
+                backgroundColor: "#FBDCD5",
+                fontFamily: "Nunito_400Regular",
+                padding: 8,
+                borderRadius: 10,
+              }}
+            >
+              {receipe.notes}
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 22, fontWeight: "500" },
+  container: { flex: 1, backgroundColor: "#FBDCD5" },
+  title: { fontSize: 30, fontWeight: "bold", fontFamily: "Baloo2_700Bold" },
+  subTitle: { fontSize: 20, fontWeight: "bold", fontFamily: "Baloo2_700Bold" },
+  scrollContent: {
+    flexGrow: 1,
+    gap: 3,
+  },
+  detailsContainer: {
+    paddingLeft: 30,
+    paddingRight: 30,
+    paddingTop: 50,
+    backgroundColor: "white",
+    width: "100%",
+    flex: 1,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  timeContainer: {
+    flexDirection: "row",
+  },
+  timeBox: {
+    backgroundColor: "#FDEAE6",
+    padding: 20,
+    borderRadius: 24,
+    flexDirection: "column",
+  },
+  ingredients: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#FBDCD5",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+  },
+  ingredient: {},
+  steps: {
+    display: "flex",
+    gap: 10,
+    marginTop: 10,
+  },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginBottom: 16,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#FF8A65",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stepNumberText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 15,
+    color: "#3A3A3A",
+    lineHeight: 22,
+  },
+  favoriteButton: {
+    padding: 8,
+  },
 });

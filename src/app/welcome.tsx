@@ -1,11 +1,9 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { useAppStore } from "@/store/app-store";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 
 export default function WelcomeScreen() {
-  const enter = useAppStore((state) => state.enter);
-
   return (
     <SafeAreaView style={styles.container}>
       <Image
@@ -18,15 +16,26 @@ export default function WelcomeScreen() {
         style={{ width: 400, height: 300, marginBlockStart: 150 }}
         contentFit="contain"
       />
-      <Pressable
-        style={({ pressed }) => [
-          styles.button,
-          pressed && styles.buttonPressed,
-        ]}
-        onPress={enter}
-      >
-        <Text style={styles.buttonText}>Enter 🥕</Text>
-      </Pressable>
+      <View style={{gap: 6, marginBottom: 60}}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={() => router.push("/create-account")}
+        >
+          <Text style={styles.buttonText}>Create account</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={() => router.push("/login")}
+        >
+          <Text style={styles.buttonText}>Log in 🥕</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -60,5 +69,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 17,
     fontWeight: "700",
+    textAlign: "center"
   },
 });

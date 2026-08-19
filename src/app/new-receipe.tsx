@@ -5,26 +5,53 @@ import {
   Pressable,
   Text,
   ScrollView,
+  View,
+  Alert,
 } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
 import * as Crypto from "expo-crypto";
 import { SafeAreaView } from "react-native-safe-area-context";
 import IngridientInput from "@/components/IngriedientsInput";
+import ImagePickerInput from "@/components/ImagePickerInput";
+import { uploadImage } from "@/lib/supabase";
 
 export default function NewReceipe() {
+  const [saving, setSaving] = useState<boolean>(false);
   const [receipe, setReceipe] = useState<Receipe>({
     id: "",
     title: "",
-    image: "",
+    image_url: "",
     servings: 0,
+    time: 0,
     ingredients: [{ id: Crypto.randomUUID(), name: "", amount: "" }],
+    steps: "",
+    notes: "",
   });
   const addReceipe = useReceipeStore((state) => state.addReceipe);
   const id = Crypto.randomUUID();
 
-  const handleSave = () => {
-    addReceipe(receipe);
+  const handleSave = async () => {
+    setSaving(true);
+    let imageUrl = receipe.image_url;
+    console.log("Image URI inițial:", receipe.image_url);
+
+    if (receipe.image_url && !receipe.image_url.includes("supabase.co")) {
+      console.log("Încep upload...");
+      const uploadedUrl = await uploadImage(receipe.image_url);
+      console.log("Rezultat upload:", uploadedUrl);
+      if (uploadedUrl) {
+        imageUrl = uploadedUrl;
+      } else {
+        imageUrl = "";
+      }
+    } else {
+      console.log("Nu se face upload — condiția nu a fost îndeplinită");
+    }
+
+    console.log("Image URL final trimis la addReceipe:", imageUrl);
+    await addReceipe({ ...receipe, image_url: imageUrl });
+    setSaving(false);
     router.back();
   };
 
@@ -43,27 +70,64 @@ export default function NewReceipe() {
           }
           placeholder="Receipe name"
         />
-        <TextInput
-          style={styles.input}
-          value={receipe.image}
-          onChangeText={(value) => setReceipe({ ...receipe, image: value })}
-          placeholder="Image"
-          placeholderTextColor="#7c7474"
+        <ImagePickerInput
+          image={receipe.image_url ?? ""}
+          onChange={(uri) => setReceipe({ ...receipe, image_url: uri })}
         />
+        <Text style={styles.title}>Ingredients</Text>
+        <View
+          style={{ flexDirection: "row", width: "90%", margin: "auto", gap: 5 }}
+        >
+          <TextInput
+            keyboardType="numeric"
+            style={styles.input}
+            value={receipe.servings === 0 ? "" : String(receipe.servings)}
+            onChangeText={(value) =>
+              setReceipe({ ...receipe, servings: Number(value) })
+            }
+            placeholder="Servings"
+            placeholderTextColor="#7c7474"
+          />
+
+          <TextInput
+            keyboardType="numeric"
+            style={styles.input}
+            value={receipe.time === 0 ? "" : String(receipe.time)}
+            onChangeText={(value) =>
+              setReceipe({ ...receipe, time: Number(value) || 0 })
+            }
+            placeholder="Time (min)"
+            placeholderTextColor="#7c7474"
+          />
+        </View>
+
+        <IngridientInput
+          ingredients={receipe.ingredients}
+          onChange={(ingredients) => setReceipe({ ...receipe, ingredients })}
+        />
+        <Text style={styles.title}>Steps</Text>
         <TextInput
-          keyboardType="numeric"
+          style={styles.textarea}
+          value={receipe.steps}
+          onChangeText={(value) => setReceipe({ ...receipe, steps: value })}
+          placeholder="Describe each step..."
+          placeholderTextColor="#7c7474"
+          multiline
+          numberOfLines={5}
+        />
+
+        <TextInput
           style={styles.input}
-          value={receipe.servings}
-          onChangeText={(value) =>
-            setReceipe({ ...receipe, servings: Number(value) })
-          }
-          placeholder="Servings"
+          value={receipe.notes}
+          onChangeText={(value) => setReceipe({ ...receipe, notes: value })}
+          placeholder="Notes (optional)"
           placeholderTextColor="#7c7474"
         />
 
-        <IngridientInput ingredients={receipe.ingredients} onChange={(ingredients) => setReceipe({...receipe, ingredients})}/>
         <Pressable style={styles.button} onPress={handleSave}>
-          <Text>Add ..</Text>
+          <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+            {saving ? "Saving..." : "Save Recipe 🥕"}
+          </Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -74,6 +138,7 @@ const styles = StyleSheet.create({
   titleInput: {
     backgroundColor: "white",
     color: "black",
+    margin: "auto",
   },
   container: {
     flex: 1,
@@ -89,8 +154,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 4,
+    width: 200,
+    margin: "auto",
   },
   input: {
+    backgroundColor: "#fffefe",
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    fontSize: 16,
+    color: "#1A1A1A",
+    borderWidth: 1,
+    borderColor: "#ffffff",
+    width: "90%",
+    margin: "auto",
+    marginBottom: 5,
+  },
+  scrollContent: {
+    paddingTop: 18,
+    paddingBottom: 40,
+    gap: 3,
+  },
+  textarea: {
     backgroundColor: "#F5F5F5",
     borderRadius: 16,
     paddingVertical: 14,
@@ -99,12 +184,16 @@ const styles = StyleSheet.create({
     color: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    width: 300,
+    width: "90%",
+    minHeight: 120,
+    textAlignVertical: "top",
+    margin: "auto",
   },
-  scrollContent: {
-    paddingTop: 18,
-    paddingBottom: 40,
-    alignItems: "center",
-    gap: 3,
+  title: {
+    fontWeight: "bold",
+    fontSize: 18,
+    marginLeft: 27,
+    marginBottom: 10,
+    marginTop: 10,
   },
 });
