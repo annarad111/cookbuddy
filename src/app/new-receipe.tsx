@@ -8,6 +8,7 @@ import {
   View,
   TouchableWithoutFeedback,
   Keyboard,
+  Platform,
 } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
@@ -53,7 +54,7 @@ export default function NewReceipe() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <TouchableWithoutFeedback onPress={Platform.OS === "web" ? undefined : Keyboard.dismiss}>
       <SafeAreaView style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -170,9 +171,8 @@ const styles = StyleSheet.create({
     color: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    flex: 1,
-    width: '90%',
-    margin: 'auto',
+    width: "90%",
+    margin: "auto",
     marginBottom: 15,
     marginTop: 15,
   },
