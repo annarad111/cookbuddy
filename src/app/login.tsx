@@ -22,7 +22,7 @@ export default function Login() {
   const handleLogin = async () => {
     if (busy) return;
     if (!email.trim() || !password) {
-      setMessage("Completează emailul și parola.");
+      setMessage("Enter your email and password.");
       return;
     }
     setBusy(true);
@@ -36,13 +36,13 @@ export default function Login() {
       if (error)
         setMessage(
           error.message === "Invalid login credentials"
-            ? "Email sau parolă greșită."
+            ? "Wrong email or password."
             : error.message === "Email not confirmed"
-              ? "Confirmă mai întâi adresa de email (verifică inbox-ul)."
+              ? "Confirm your email address first (check your inbox)."
               : error.message,
         );
     } catch {
-      setMessage("Nu m-am putut conecta la server. Verifică internetul.");
+      setMessage("Could not reach the server. Check your internet connection.");
     } finally {
       setBusy(false);
     }

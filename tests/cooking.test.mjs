@@ -95,11 +95,11 @@ test("local planning respects category, time, exclusions, repeats and all day sl
   assert.equal(plan[3].recipe.id, "breakfast2");
   assert.throws(
     () => localPlan(recipes, { ...p, excluded: "orez, cartofi" }),
-    /eligibile/,
+    /No eligible recipes/,
   );
   assert.throws(
     () => localPlan(recipes, { ...p, maxMinutes: 10 }),
-    /eligibile/,
+    /No eligible recipes/,
   );
   assert.equal(
     excludedRecipe(recipe("A", [ingredient("Pește", 100, "g")]), "peste"),
@@ -123,11 +123,11 @@ test("AI plans require every slot once, valid numeric amounts and filters", () =
         { meals: [valid.meals[0], valid.meals[0], valid.meals[2]] },
         p,
       ),
-    /repetat/,
+    /repeated a meal slot/,
   );
   assert.throws(
     () => validatePlan(valid, { ...p, excluded: "orez" }),
-    /exclus/,
+    /excluded ingredient/,
   );
   assert.throws(() =>
     validateRecipe({ ...valid.meals[0].recipe, servings: 0 }, "bad"),
@@ -181,4 +181,53 @@ test("AI recipes keep a sane calorie estimate and drop invalid ones", () => {
   assert.equal(validateRecipe({ ...base, calories: 412.6 }, "a").calories, 413);
   assert.equal(validateRecipe({ ...base, calories: 99999 }, "b").calories, null);
   assert.equal(validateRecipe(base, "c").calories, null);
+});
+
+test("units are metric: spoons, cups, oz and lb convert to g/ml; older Romanian units still match", async () => {
+  const { estimateCalories, findFood } = await import("../src/domain/nutrition.ts");
+  assert.deepEqual(ingredientQuantity({ amount: "2 pcs" }), { quantity: 2, unit: "pcs" });
+  assert.deepEqual(ingredientQuantity({ amount: "3 buc" }), { quantity: 3, unit: "pcs" });
+  assert.deepEqual(ingredientQuantity({ amount: "1 lingură" }), { quantity: 15, unit: "ml" });
+  assert.deepEqual(ingredientQuantity({ amount: "2 tablespoons" }), { quantity: 30, unit: "ml" });
+  assert.deepEqual(ingredientQuantity({ amount: "1 tsp" }), { quantity: 5, unit: "ml" });
+  assert.deepEqual(ingredientQuantity({ amount: "1 cup" }), { quantity: 240, unit: "ml" });
+  assert.deepEqual(ingredientQuantity(ingredient("Butter", 4, "oz")), { quantity: 113, unit: "g" });
+  assert.equal(scaledIngredient(ingredient("Flour", 1, "lb"), 2, 1), "908 g");
+  // AI answers are stored metric.
+  const ai = validateRecipe(
+    {
+      title: "Oats",
+      servings: 1,
+      time: 5,
+      ingredients: [{ name: "Olive oil", quantity: 2, unit: "tbsp" }],
+      steps: "Mix.",
+    },
+    "m",
+  );
+  assert.deepEqual(
+    { quantity: ai.ingredients[0].quantity, unit: ai.ingredients[0].unit, amount: ai.ingredients[0].amount },
+    { quantity: 30, unit: "ml", amount: "30 ml" },
+  );
+  // Shopping adds spoons and millilitres of the same thing together.
+  const items = shoppingList(
+    [entry("1", recipe("Salad", [ingredient("Olive oil", 2, "tbsp"), ingredient("olive oil", 20, "ml")]), 2)],
+    [],
+  );
+  assert.equal(items.length, 1);
+  assert.equal(items[0].quantity, 50);
+  assert.equal(items[0].unit, "ml");
+  assert.equal(findFood("Chicken breast").kcal, 120);
+  assert.equal(findFood("Bell peppers").kcal, 26, "bell pepper, not black pepper");
+  assert.equal(findFood("Black pepper").kcal, 0);
+  const e = estimateCalories({
+    servings: 1,
+    ingredients: [
+      ingredient("Rolled oats", 50, "g"), // 190
+      ingredient("Milk", 1, "cup"), // 240 ml * 1.03 * 0.64 = 158.2
+      ingredient("Banana", 1, "pcs"), // 106.8
+      ingredient("Peanut butter", 1, "oz"), // 28 g * 5.88 = 164.6
+    ],
+  });
+  assert.deepEqual(e.unknown, []);
+  assert.equal(e.perServing, 620);
 });

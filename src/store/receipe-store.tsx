@@ -79,7 +79,7 @@ export const useReceipeStore = create<ReceipeState>((set, get) => ({
       set({
         loading: false,
         error:
-          e instanceof Error ? e.message : "Rețetele nu au putut fi încărcate.",
+          e instanceof Error ? e.message : "Could not load recipes.",
       });
     }
   },
@@ -87,7 +87,7 @@ export const useReceipeStore = create<ReceipeState>((set, get) => ({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) throw new Error("Autentifică-te pentru a salva.");
+    if (!user) throw new Error("Log in to save.");
     const { data, error } = await supabase
       .from("recipes")
       .insert({

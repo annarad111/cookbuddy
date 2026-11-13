@@ -1,9 +1,9 @@
 export const MEALS = ["breakfast", "lunch", "dinner"] as const;
 export type Meal = (typeof MEALS)[number];
 export const mealLabels: Record<Meal, string> = {
-  breakfast: "Mic dejun",
-  lunch: "Prânz",
-  dinner: "Cină",
+  breakfast: "Breakfast",
+  lunch: "Lunch",
+  dinner: "Dinner",
 };
 export type Ingredient = {
   id: string;
@@ -100,37 +100,65 @@ export function canonicalUnit(s: string): string {
         grams: "g",
         kilogram: "kg",
         kilograme: "kg",
+        kilograms: "kg",
         litru: "l",
         litri: "l",
-        bucati: "buc",
-        bucata: "buc",
-        pcs: "buc",
-        piece: "buc",
-        pieces: "buc",
-        linguri: "lingură",
-        lingura: "lingură",
-        tbsp: "lingură",
-        lingurite: "linguriță",
-        lingurita: "linguriță",
-        tsp: "linguriță",
+        liter: "l",
+        liters: "l",
+        litre: "l",
+        litres: "l",
+        // Pieces, spoons and cups: Romanian names from older recipes map to English.
+        buc: "pcs",
+        bucati: "pcs",
+        bucata: "pcs",
+        pc: "pcs",
+        piece: "pcs",
+        pieces: "pcs",
+        linguri: "tbsp",
+        lingura: "tbsp",
+        tablespoon: "tbsp",
+        tablespoons: "tbsp",
+        lingurite: "tsp",
+        lingurita: "tsp",
+        teaspoon: "tsp",
+        teaspoons: "tsp",
+        cana: "cup",
+        cani: "cup",
+        cups: "cup",
+        ounce: "oz",
+        ounces: "oz",
+        pound: "lb",
+        pounds: "lb",
+        lbs: "lb",
       } as Record<string, string>
     )[unit] ?? unit
   );
 }
-const units = new Set([
-  "g",
-  "kg",
-  "ml",
-  "l",
-  "buc",
-  "lingură",
-  "linguriță",
-  "cană",
-  "cana",
-  "cup",
-  "cl",
-  "mg",
-]);
+/** The only units the app shows and stores: metric plus pieces. */
+export const METRIC_UNITS = ["g", "kg", "ml", "l", "pcs"] as const;
+// Non-metric units (from imports, older recipes or AI) are converted on the way in.
+const TO_METRIC: Record<string, { factor: number; unit: string }> = {
+  tbsp: { factor: 15, unit: "ml" },
+  tsp: { factor: 5, unit: "ml" },
+  cup: { factor: 240, unit: "ml" },
+  cl: { factor: 10, unit: "ml" },
+  dl: { factor: 100, unit: "ml" },
+  oz: { factor: 28.35, unit: "g" },
+  lb: { factor: 453.6, unit: "g" },
+  mg: { factor: 0.001, unit: "g" },
+};
+/** Converts spoons, cups, oz, lb… to g/ml; other units are returned canonicalised. */
+export function toMetric(
+  quantity: number,
+  unit: string,
+): { quantity: number; unit: string } {
+  const u = canonicalUnit(unit);
+  const c = TO_METRIC[u];
+  if (!c) return { quantity, unit: u };
+  // Whole grams/millilitres read better than 28.35 g; keep decimals for tiny amounts.
+  const q = quantity * c.factor;
+  return { quantity: q >= 10 ? Math.round(q) : Math.round(q * 10) / 10, unit: c.unit };
+}
 export function ingredientQuantity(
   i: Ingredient,
 ): { quantity: number; unit: string } | null {
@@ -139,25 +167,27 @@ export function ingredientQuantity(
     Number.isFinite(i.quantity) &&
     i.quantity > 0
   )
-    return { quantity: i.quantity, unit: canonicalUnit(i.unit || "buc") };
+    return toMetric(i.quantity, i.unit || "pcs");
   const m = i.amount?.trim().match(/^(\d+(?:[.,]\d+)?|\d+\/\d+)\s*([^\d]*)$/);
   if (!m) return null;
   const quantity = m[1].includes("/")
     ? Number(m[1].split("/")[0]) / Number(m[1].split("/")[1])
     : Number(m[1].replace(",", "."));
-  const unit = canonicalUnit(m[2] || "buc");
-  return Number.isFinite(quantity) && quantity > 0 && units.has(unit)
-    ? { quantity, unit }
+  const q = toMetric(quantity, m[2] || "pcs");
+  return Number.isFinite(q.quantity) &&
+    q.quantity > 0 &&
+    (METRIC_UNITS as readonly string[]).includes(q.unit)
+    ? q
     : null;
 }
 export function baseQuantity(
   quantity: number,
   unit: string,
 ): { quantity: number; unit: string } {
-  unit = canonicalUnit(unit);
-  if (unit === "kg") return { quantity: quantity * 1000, unit: "g" };
-  if (unit === "l") return { quantity: quantity * 1000, unit: "ml" };
-  return { quantity, unit };
+  const q = toMetric(quantity, unit);
+  if (q.unit === "kg") return { quantity: q.quantity * 1000, unit: "g" };
+  if (q.unit === "l") return { quantity: q.quantity * 1000, unit: "ml" };
+  return q;
 }
 export function formatQuantity(quantity: number, unit: string): string {
   return `${Math.round((quantity + Number.EPSILON) * 100) / 100} ${unit}`;
@@ -169,7 +199,7 @@ export function scaledIngredient(
 ): string {
   const q = ingredientQuantity(i);
   if (!q || !(baseServings > 0))
-    return `${i.amount || "după gust"} (verifică manual)`;
+    return `${i.amount || "to taste"} (check manually)`;
   return formatQuantity((q.quantity * servings) / baseServings, q.unit);
 }
 export type ShoppingItem = {
@@ -222,7 +252,7 @@ export function shoppingList(
   }
   return [...items.values()]
     .filter((i) => i.quantity === null || i.quantity > 0.0001)
-    .sort((a, b) => a.name.localeCompare(b.name, "ro"));
+    .sort((a, b) => a.name.localeCompare(b.name, "en"));
 }
 export function excludedRecipe(recipe: Recipe, excluded: string): boolean {
   const terms = excluded
@@ -247,7 +277,7 @@ export function localPlan(recipes: Recipe[], p: Preferences): PlanEntry[] {
       );
       if (!options.length)
         throw new Error(
-          `Nu ai rețete eligibile pentru ${mealLabels[meal].toLowerCase()}. Alege categoria rețetelor sau folosește AI.`,
+          `No eligible recipes for ${mealLabels[meal].toLowerCase()}. Set the meal type of your recipes or use AI.`,
         );
       const recipe = options[(p.repeatMeals ? 0 : day - 1) % options.length];
       result.push({
@@ -262,12 +292,12 @@ export function localPlan(recipes: Recipe[], p: Preferences): PlanEntry[] {
 }
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Răspuns AI invalid. Încearcă din nou.");
+    throw new Error("Invalid AI response. Please try again.");
   return value as Record<string, unknown>;
 }
 function str(value: unknown, max: number): string {
   if (typeof value !== "string" || !value.trim() || value.length > max)
-    throw new Error("Text lipsă sau prea lung în răspunsul AI.");
+    throw new Error("Missing or too long text in the AI response.");
   return value.trim();
 }
 function num(value: unknown, min: number, max: number): number {
@@ -277,7 +307,7 @@ function num(value: unknown, min: number, max: number): number {
     value < min ||
     value > max
   )
-    throw new Error("Cantitate sau durată invalidă în răspunsul AI.");
+    throw new Error("Invalid quantity or duration in the AI response.");
   return value;
 }
 export function validateRecipe(value: unknown, id: string): Recipe {
@@ -287,8 +317,8 @@ export function validateRecipe(value: unknown, id: string): Recipe {
     r.ingredients.length < 1 ||
     r.ingredients.length > 50
   )
-    throw new Error("Lista de ingrediente AI este invalidă.");
-  if (!Number.isInteger(r.servings) || !Number.isInteger(r.time)) throw new Error('Porțiile și durata trebuie să fie numere întregi.');
+    throw new Error("The AI ingredient list is invalid.");
+  if (!Number.isInteger(r.servings) || !Number.isInteger(r.time)) throw new Error('Servings and time must be whole numbers.');
   const meal = MEALS.includes(r.meal_type as Meal)
     ? (r.meal_type as Meal)
     : "any";
@@ -300,14 +330,17 @@ export function validateRecipe(value: unknown, id: string): Recipe {
     meal_type: meal,
     ingredients: r.ingredients.map((value, index) => {
       const i = object(value);
-      const quantity = num(i.quantity, 0, 100000);
-      const unit = str(i.unit, 30);
+      const raw = num(i.quantity, 0, 100000);
+      // Store metric only: "2 tbsp" from the AI becomes "30 ml".
+      const metric = raw > 0 ? toMetric(raw, str(i.unit, 30)) : null;
+      const quantity = metric?.quantity ?? 0;
+      const unit = metric?.unit ?? str(i.unit, 30);
       return {
         id: `${id}-i${index}`,
         name: str(i.name, 160),
         quantity: quantity || null,
         unit,
-        amount: quantity > 0 ? formatQuantity(quantity, unit) : "după gust",
+        amount: quantity > 0 ? formatQuantity(quantity, unit) : "to taste",
       };
     }),
     steps: str(r.steps, 16000),
@@ -326,7 +359,7 @@ export function validatePlan(value: unknown, p: Preferences): PlanEntry[] {
   const data = object(value);
   if (!Array.isArray(data.meals) || data.meals.length !== p.days * 3)
     throw new Error(
-      "AI-ul nu a returnat toate mesele. Planul anterior a fost păstrat.",
+      "The AI did not return every meal. Your previous plan was kept.",
     );
   const keys = new Set<string>();
   return data.meals.map((value) => {
@@ -334,17 +367,17 @@ export function validatePlan(value: unknown, p: Preferences): PlanEntry[] {
     const day = num(m.day, 1, p.days);
     const meal = m.meal as Meal;
     if (!Number.isInteger(day) || !MEALS.includes(meal))
-      throw new Error("Zi sau tip de masă invalid.");
+      throw new Error("Invalid day or meal type.");
     const key = `${day}-${meal}`;
-    if (keys.has(key)) throw new Error("AI-ul a repetat un interval de masă.");
+    if (keys.has(key)) throw new Error("The AI repeated a meal slot.");
     keys.add(key);
     const recipe = validateRecipe(m.recipe, `ai-${key}`);
     if (excludedRecipe(recipe, p.excluded))
       throw new Error(
-        "O propunere conține un ingredient exclus. Încearcă din nou.",
+        "A suggestion contains an excluded ingredient. Please try again.",
       );
     if (recipe.time > p.maxMinutes)
-      throw new Error("O rețetă depășește timpul ales. Încearcă din nou.");
+      throw new Error("A recipe exceeds the chosen time. Please try again.");
     recipe.meal_type = meal;
     return { id: key, day, meal, servings: p.people, recipe };
   });

@@ -6,16 +6,18 @@
 const ingredient = {
   type: "object",
   description:
-    "Un ingredient crud. Pentru cantități necunoscute: quantity=0 și unit=\"după gust\".",
+    "A raw ingredient. For unknown quantities: quantity=0 and unit=\"to taste\".",
   properties: {
-    name: { type: "string", description: "Denumirea ingredientului, în română." },
+    name: { type: "string", description: "Ingredient name, in English." },
     quantity: {
       type: "number",
-      description: "Cantitatea pentru TOATE porțiile rețetei. 0 dacă e după gust.",
+      description: "Quantity for ALL servings of the recipe. 0 if to taste.",
     },
     unit: {
       type: "string",
-      description: "g, kg, ml, l, buc, lingură, linguriță sau \"după gust\".",
+      // Metric only: no cups, spoons, ounces or pounds.
+      enum: ["g", "kg", "ml", "l", "pcs", "to taste"],
+      description: "Metric unit. Use \"to taste\" only when quantity is 0.",
     },
   },
   required: ["name", "quantity", "unit"],
@@ -25,12 +27,12 @@ const ingredient = {
 export const recipeSchema = {
   type: "object",
   properties: {
-    title: { type: "string", description: "Numele rețetei, în română." },
+    title: { type: "string", description: "Recipe name, in English." },
     servings: {
       type: "integer",
-      description: "Numărul de porții pentru care sunt cantitățile (1-100).",
+      description: "Number of servings the quantities are for (1-100).",
     },
-    time: { type: "integer", description: "Timpul total în minute (1-1440)." },
+    time: { type: "integer", description: "Total time in minutes (1-1440)." },
     meal_type: {
       type: "string",
       enum: ["breakfast", "lunch", "dinner", "any"],
@@ -38,13 +40,13 @@ export const recipeSchema = {
     ingredients: { type: "array", items: ingredient },
     steps: {
       type: "string",
-      description: "Pașii de preparare, câte unul pe rând, separați prin \\n.",
+      description: "Method steps in English, one per line, separated by \\n.",
     },
-    notes: { type: "string", description: "Observații sau \"\"." },
+    notes: { type: "string", description: "Notes in English, or \"\"." },
     calories: {
       type: ["integer", "null"],
       description:
-        "Estimare kcal pentru O porție (nu toată rețeta). Pentru import: doar dacă apare în material, altfel null.",
+        "Estimated kcal for ONE serving (not the whole recipe). For imports: only if stated in the material, otherwise null.",
     },
   },
   required: [
@@ -68,7 +70,7 @@ export const planSchema = {
       items: {
         type: "object",
         properties: {
-          day: { type: "integer", description: "Ziua planului, de la 1." },
+          day: { type: "integer", description: "Plan day, starting at 1." },
           meal: { type: "string", enum: ["breakfast", "lunch", "dinner"] },
           recipe: recipeSchema,
         },
@@ -88,7 +90,7 @@ export const importSchema = {
     recipe: { anyOf: [recipeSchema, { type: "null" }] },
     error: {
       type: ["string", "null"],
-      description: "Motivul, dacă materialul nu conține o rețetă; altfel null.",
+      description: "The reason, if the material contains no recipe; otherwise null.",
     },
   },
   required: ["recipe", "error"],
@@ -100,11 +102,11 @@ export const caloriesSchema = {
   properties: {
     calories: {
       type: "integer",
-      description: "Estimare kcal pentru O porție, rotunjită.",
+      description: "Estimated kcal for ONE serving, rounded.",
     },
     note: {
       type: "string",
-      description: "O propoziție despre presupunerile făcute (ex. cantitatea de ulei).",
+      description: "One sentence in English about the assumptions made (e.g. amount of oil).",
     },
   },
   required: ["calories", "note"],

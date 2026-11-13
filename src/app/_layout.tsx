@@ -107,7 +107,7 @@ export default function RootLayout() {
           options={{
             presentation: "modal",
             headerShown: true,
-            title: "Importă o rețetă",
+            title: "Import a recipe",
           }}
         />
         <Stack.Screen name="receipe/[id]" />
@@ -116,7 +116,7 @@ export default function RootLayout() {
           options={{
             presentation: "modal",
             headerShown: true,
-            title: "Rețetă",
+            title: "Recipe",
           }}
         />
       </Stack.Protected>

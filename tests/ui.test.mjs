@@ -13,9 +13,9 @@ const houseId = "44444444-4444-4444-8444-444444444444";
 const recipe = (meal) => ({
   id: `55555555-5555-4555-8555-55555555555${["breakfast", "lunch", "dinner"].indexOf(meal)}`,
   title: {
-    breakfast: "Pancakes proteice",
-    lunch: "Paste bolognese",
-    dinner: "Shaorma cu pui",
+    breakfast: "Protein pancakes",
+    lunch: "Pasta bolognese",
+    dinner: "Chicken shawarma",
   }[meal],
   servings: 2,
   time: 25,
@@ -23,13 +23,13 @@ const recipe = (meal) => ({
   ingredients: [
     {
       id: "pui",
-      name: "Piept de pui",
+      name: "Chicken breast",
       quantity: 500,
       unit: "g",
       amount: "500 g",
     },
   ],
-  steps: "Prepară ingredientele.\nGătește și servește.",
+  steps: "Prepare the ingredients.\nCook and serve.",
   calories: 400,
   user_id: userId,
   household_id: houseId,
@@ -153,7 +153,7 @@ test(
         if (path.endsWith("/cookbuddy_households"))
           return reply({
             id: houseId,
-            name: "Bucătăria noastră",
+            name: "Our kitchen",
             owner_id: userId,
             invite_code: houseId,
           });
@@ -171,7 +171,7 @@ test(
           return reply(recipes);
         }
         if (path.endsWith("/functions/v1/cooking-ai"))
-          return reply({ ...recipe("dinner"), title: "Rețetă importată" });
+          return reply({ ...recipe("dinner"), title: "Imported recipe" });
         return reply([]);
       });
       await page.routeWebSocket("wss://example.supabase.co/**", (socket) =>
@@ -209,31 +209,31 @@ test(
         { userId, jwt },
       );
       await page.goto(base + "/");
-      await page.getByText("Pancakes proteice", { exact: true }).waitFor();
+      await page.getByText("Protein pancakes", { exact: true }).waitFor();
       await page.getByRole("tab", { name: /Plan$/ }).click();
-      await page.getByText("Ce gătim împreună?", { exact: true }).waitFor();
+      await page.getByText("What are we cooking?", { exact: true }).waitFor();
       await page
         .getByRole("button", {
-          name: "Plan din registru · fără AI",
+          name: "Plan from my recipes · no AI",
           exact: true,
         })
         .click();
-      await page.getByText("Planul vostru", { exact: true }).waitFor();
+      await page.getByText("Your plan", { exact: true }).waitFor();
       assert.equal(kitchen.plan.length, 9);
-      await page.getByText("Ziua 1 · ≈ 1200 kcal/persoană", { exact: true }).waitFor();
+      await page.getByText("Day 1 · ≈ 1200 kcal/person", { exact: true }).waitFor();
       await page
-        .getByRole("button", { name: "+ o porție", exact: true })
+        .getByRole("button", { name: "+ 1 serving", exact: true })
         .first()
         .click();
       await page.waitForFunction(() =>
-        document.body.innerText.includes("3 porții"),
+        document.body.innerText.includes("3 servings"),
       );
       assert.equal(kitchen.plan[0].servings, 3);
       if (process.env.SCREENSHOT_DIR)
         await page.screenshot({
           path: resolve(process.env.SCREENSHOT_DIR, "planner-desktop.png"),
         });
-      await page.getByText("Listă", { exact: true }).click();
+      await page.getByText("List", { exact: true }).click();
       await page.getByRole("checkbox").first().waitFor();
       assert.match(
         await page.getByRole("checkbox").first().innerText(),
@@ -242,50 +242,50 @@ test(
       await page.getByRole("checkbox").first().click();
       await page.waitForFunction(() => document.body.innerText.includes("☑"));
       assert.equal(kitchen.checked.length, 1);
-      await page.getByText("Cămară", { exact: true }).click();
-      await page.getByLabel("Ingredient", { exact: true }).fill("Piept de pui");
-      await page.getByLabel("Cantitate", { exact: true }).fill("500");
+      await page.getByText("Pantry", { exact: true }).click();
+      await page.getByLabel("Ingredient", { exact: true }).fill("Chicken breast");
+      await page.getByLabel("Quantity", { exact: true }).fill("500");
       await page
-        .getByRole("button", { name: "Adaugă în cămară", exact: true })
+        .getByRole("button", { name: "Add to pantry", exact: true })
         .click();
       await page.waitForFunction(() =>
-        document.body.innerText.includes("Elimină din cămară"),
+        document.body.innerText.includes("Remove from pantry"),
       );
       assert.equal(kitchen.pantry.length, 1);
-      await page.getByText("Listă", { exact: true }).click();
+      await page.getByText("List", { exact: true }).click();
       assert.match(
         await page.getByRole("checkbox").first().innerText(),
         /4250 g/,
       );
-      await page.getByText("Rețete", { exact: true }).last().click();
+      await page.getByText("Recipes", { exact: true }).last().click();
       await page
-        .getByRole("button", { name: "Import cu AI ✨", exact: true })
+        .getByRole("button", { name: "Import with AI ✨", exact: true })
         .click();
       await page
-        .getByLabel("Textul rețetei", { exact: true })
-        .fill("Orez cu legume, 2 porții, 150 g orez, fierbe.");
+        .getByLabel("Recipe text", { exact: true })
+        .fill("Rice with vegetables, 2 servings, 150 g rice, boil.");
       await page
         .getByRole("button", {
-          name: "Pregătește rețeta cu AI ✨",
+          name: "Prepare recipe with AI ✨",
           exact: true,
         })
         .click();
       await page
-        .getByText("Verifică și editează rețeta", { exact: true })
+        .getByText("Review and edit the recipe", { exact: true })
         .waitFor();
       await page
-        .getByLabel("Numele rețetei", { exact: true })
-        .fill("Rețeta verificată de Ana");
+        .getByLabel("Recipe name", { exact: true })
+        .fill("Recipe checked by Ana");
       // Imported: 500 g chicken breast for 2 portions -> 600 kcal / 2.
       await page
-        .getByRole("button", { name: "Calculează din ingrediente", exact: true })
+        .getByRole("button", { name: "Calculate from ingredients", exact: true })
         .click();
-      await page.getByText("≈ 300 kcal/porție (600 kcal în total).", { exact: true }).waitFor();
+      await page.getByText("≈ 300 kcal/serving (600 kcal total).", { exact: true }).waitFor();
       await page
-        .getByRole("button", { name: "Salvează rețeta", exact: true })
+        .getByRole("button", { name: "Save recipe", exact: true })
         .click();
       await page
-        .getByText("Rețeta verificată de Ana", { exact: true })
+        .getByText("Recipe checked by Ana", { exact: true })
         .waitFor();
       assert.equal(recipes.at(-1).calories, 300, "calories saved with the recipe");
       await page.setViewportSize({ width: 390, height: 844 });

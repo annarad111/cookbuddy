@@ -8,7 +8,8 @@ import {
   Recipe,
   formatQuantity,
   mealLabels,
-  canonicalUnit,
+  METRIC_UNITS,
+  toMetric,
 } from "@/domain/cooking";
 import { suggestRecipe } from "@/lib/cooking-ai";
 import {
@@ -35,39 +36,36 @@ export default function Pantry() {
   const [saved, setSaved] = useState(false);
   return (
     <Page>
-      <Title>Ce avem în casă?</Title>
+      <Title>What's in the kitchen?</Title>
       <Copy>
-        Folosește aceeași denumire ca în rețete pentru scăderea corectă din
-        cumpărături. Actualizează cantitățile după ce gătiți.
+        Use the same names as in your recipes so they're subtracted from the shopping list. Update quantities after you cook.
       </Copy>
       <Card>
         <Field label="Ingredient" value={name} onChangeText={setName} />
         <View style={ui.row}>
           <View style={{ flex: 1 }}>
             <Field
-              label="Cantitate"
+              label="Quantity"
               value={quantity}
               numeric
               onChangeText={setQuantity}
             />
           </View>
-          <View style={{ flex: 1 }}>
-            <Field
-              label="Unitate (g, kg, ml, l, buc)"
-              value={unit}
-              onChangeText={setUnit}
-            />
-          </View>
         </View>
+        <Choice
+          value={unit}
+          options={METRIC_UNITS.map((u) => ({ value: u as string, label: u }))}
+          onChange={setUnit}
+        />
         <Action
-          label="Adaugă în cămară"
+          label="Add to pantry"
           disabled={task.busy || !household}
           onPress={() =>
             task.run(async () => {
               const n = Number(quantity.replace(",", "."));
               if (!name.trim() || !Number.isFinite(n) || n <= 0 || !unit.trim())
                 throw new Error(
-                  "Completează denumirea, o cantitate pozitivă și unitatea.",
+                  "Enter a name, a positive quantity and a unit.",
                 );
               await commit((s) => ({
                 ...s,
@@ -77,8 +75,7 @@ export default function Pantry() {
                   {
                     id: Crypto.randomUUID(),
                     name: name.trim(),
-                    quantity: n,
-                    unit: canonicalUnit(unit),
+                    ...toMetric(n, unit),
                   },
                 ],
               }));
@@ -96,7 +93,7 @@ export default function Pantry() {
           </Copy>
           <Action
             secondary
-            label="Elimină din cămară"
+            label="Remove from pantry"
             disabled={task.busy}
             onPress={() =>
               task.run(() =>
@@ -111,7 +108,7 @@ export default function Pantry() {
         </Card>
       ))}
       <Card>
-        <Title>Gătim cu ce avem</Title>
+        <Title>Cook with what we have</Title>
         <Choice
           value={meal}
           options={(["breakfast", "lunch", "dinner"] as Meal[]).map((m) => ({
@@ -121,7 +118,7 @@ export default function Pantry() {
           onChange={setMeal}
         />
         <Action
-          label="Propune o rețetă ✨"
+          label="Suggest a recipe ✨"
           disabled={task.busy || !household || !data.pantry.length}
           onPress={() =>
             task.run(async () => {
@@ -144,7 +141,7 @@ export default function Pantry() {
       {suggestion && (
         <MealCard recipe={suggestion} servings={suggestion.servings}>
           <Action
-            label={saved ? "Salvată în registru" : "Salvează în registru"}
+            label={saved ? "Saved to recipes" : "Save to recipes"}
             disabled={task.busy || saved}
             onPress={() =>
               task.run(async () => {

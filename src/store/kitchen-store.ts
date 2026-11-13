@@ -63,7 +63,7 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
       );
       if (setupError)
         throw new Error(
-          "Bucătăria nu poate fi încărcată. Verifică migrarea Supabase. " +
+          "Could not load the kitchen. Check the Supabase migration. " +
             setupError.message,
         );
       const [house, state] = await Promise.all([
@@ -96,7 +96,7 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
       set({
         loading: false,
         error:
-          e instanceof Error ? e.message : "Conexiunea cu Supabase a eșuat.",
+          e instanceof Error ? e.message : "Connection to Supabase failed.",
       });
       throw e;
     }
@@ -104,10 +104,10 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
   commit: async (edit) => {
     const state = get();
     if (!state.household)
-      throw new Error("Încarcă bucătăria din profil înainte de salvare.");
+      throw new Error("Load the kitchen from Profile before saving.");
     if (state.saving)
       throw new Error(
-        "Se salvează deja o modificare. Încearcă din nou imediat.",
+        "A change is already being saved. Try again in a moment.",
       );
     const next = edit(state.data);
     loadSequence++; // An older refresh must not overwrite this save.
@@ -123,7 +123,7 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
           set({ saving: false });
           await get().load();
           throw new Error(
-            "Claudiu sau alt dispozitiv a modificat datele. Am încărcat versiunea nouă; repetă modificarea.",
+            "Someone else or another device changed the data. The new version was loaded; please repeat your change.",
           );
         }
         throw new Error(error.message);
@@ -135,11 +135,11 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
     }
   },
   join: async (code) => {
-    if (get().saving) throw new Error("Așteaptă terminarea salvării.");
+    if (get().saving) throw new Error("Wait for the save to finish.");
     const { error } = await supabase.rpc("cookbuddy_join_household", {
       p_code: code.trim(),
     });
-    if (error) throw new Error("Cod invalid sau bucătărie indisponibilă.");
+    if (error) throw new Error("Invalid code or kitchen unavailable.");
     await get().load();
   },
 }));

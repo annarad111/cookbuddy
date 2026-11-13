@@ -22,7 +22,7 @@ export default function CreateAccount() {
   const handleSignUp = async () => {
     if (busy) return;
     if (!email.trim() || password.length < 6) {
-      setMessage("Introdu un email valid și o parolă de minimum 6 caractere.");
+      setMessage("Enter a valid email and a password of at least 6 characters.");
       return;
     }
     setBusy(true);
@@ -39,10 +39,10 @@ export default function CreateAccount() {
       // With "Confirm email" enabled in Supabase there is no session yet.
       if (!data.session)
         setMessage(
-          "Cont creat! Verifică emailul și apasă linkul de confirmare, apoi intră în cont.",
+          "Account created! Check your email and click the confirmation link, then log in.",
         );
     } catch {
-      setMessage("Nu m-am putut conecta la server. Verifică internetul.");
+      setMessage("Could not reach the server. Check your internet connection.");
     } finally {
       setBusy(false);
     }

@@ -126,7 +126,7 @@ export function useTask() {
       setMessage(result || success);
     } catch (e) {
       setMessage(
-        e instanceof Error ? e.message : "A apărut o eroare. Încearcă din nou.",
+        e instanceof Error ? e.message : "Something went wrong. Please try again.",
       );
     } finally {
       setBusy(false);

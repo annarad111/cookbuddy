@@ -36,6 +36,15 @@ test("migration, RLS isolation, shared access, conflict protection and quotas", 
   );
   await db.exec(calories);
   await db.exec(calories); // rerun safety
+  const kitchenName = await readFile(
+    new URL(
+      "../supabase/migrations/202611150001_english_kitchen_name.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  await db.exec(kitchenName);
+  await db.exec(kitchenName); // rerun safety
   async function user(id, sql) {
     return db.transaction(async (tx) => {
       await tx.exec(
@@ -74,6 +83,11 @@ test("migration, RLS isolation, shared access, conflict protection and quotas", 
     `insert into public.recipes(user_id,title,servings,time,steps,calories) values('${A}','Private',2,20,'Cook',450)`,
   );
   assert.equal((await user(B, `select * from public.recipes`)).rows.length, 0);
+  assert.equal(
+    (await db.query(`select name from public.cookbuddy_households where id='${hA}'`))
+      .rows[0].name,
+    "Our kitchen",
+  );
   await user(A, `update public.recipes set calories=520 where title='Private'`);
   assert.equal(
     (await user(A, `select calories from public.recipes where title='Private'`))

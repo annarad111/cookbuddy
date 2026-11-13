@@ -17,27 +17,25 @@ export default function Shopping() {
   const list = shoppingList(data.plan, data.pantry);
   return (
     <Page>
-      <Title>Lista de cumpărături</Title>
+      <Title>Shopping list</Title>
       <Copy>
-        Cantitățile însumează toate mesele și porțiile din plan. Ingredientele
-        din cămară sunt deja scăzute. Se combină doar denumirile identice și
-        unitățile compatibile.
+        Quantities add up every meal and serving in the plan. Pantry items are already subtracted. Only identical names with compatible units are combined.
       </Copy>
       <Action
         secondary
-        label="Actualizează lista comună"
+        label="Refresh shared list"
         disabled={task.busy}
         onPress={() => task.run(load)}
       />
       {task.status}
       {!data.plan.length && (
         <Card>
-          <Copy>Creează întâi un plan de mese.</Copy>
+          <Copy>Create a meal plan first.</Copy>
         </Card>
       )}
       {!!data.plan.length && !list.length && (
         <Card>
-          <Copy>Ai deja toate ingredientele în cămară.</Copy>
+          <Copy>You already have every ingredient in the pantry.</Copy>
         </Card>
       )}
       {list.map((i) => {
@@ -71,7 +69,7 @@ export default function Shopping() {
               >
                 {checked ? "☑" : "☐"} {i.name} —{" "}
                 {i.quantity === null
-                  ? `${i.manual || "după gust"} · verifică manual`
+                  ? `${i.manual || "to taste"} · check manually`
                   : formatQuantity(i.quantity, i.unit)}
               </Text>
               <Text style={ui.small}>{i.recipes.join(" · ")}</Text>
@@ -82,15 +80,15 @@ export default function Shopping() {
       {!!list.length && (
         <Action
           secondary
-          label="Distribuie lista"
+          label="Share list"
           onPress={() =>
             task.run(() =>
               shareText(
-                "CookBuddy · Lista de cumpărături\n" +
+                "CookBuddy · Shopping list\n" +
                   list
                     .map(
                       (i) =>
-                        `${data.checked.includes(i.key) ? "✓" : "☐"} ${i.name}: ${i.quantity === null ? (i.manual || "după gust") + " (verifică manual)" : formatQuantity(i.quantity, i.unit)}`,
+                        `${data.checked.includes(i.key) ? "✓" : "☐"} ${i.name}: ${i.quantity === null ? (i.manual || "to taste") + " (check manually)" : formatQuantity(i.quantity, i.unit)}`,
                     )
                     .join("\n"),
               ),
@@ -100,7 +98,7 @@ export default function Shopping() {
       )}
       {!!data.plan.length && (
         <Card>
-          <Text style={ui.label}>De gătit pentru tot planul</Text>
+          <Text style={ui.label}>To cook for the whole plan</Text>
           {Object.entries(
             data.plan.reduce<Record<string, number>>((acc, e) => {
               acc[e.recipe.title] = (acc[e.recipe.title] || 0) + e.servings;
@@ -108,7 +106,7 @@ export default function Shopping() {
             }, {}),
           ).map(([title, count]) => (
             <Copy key={title}>
-              {title}: {count} porții în total
+              {title}: {count} servings in total
             </Copy>
           ))}
         </Card>

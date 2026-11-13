@@ -30,10 +30,10 @@ export default function ImportRecipe() {
     if (result.canceled) return;
     const asset = result.assets[0];
     if (!asset.base64 || asset.base64.length > 7_000_000)
-      throw new Error("Alege o fotografie JPG/PNG/WebP sub 5 MB.");
+      throw new Error("Choose a JPG/PNG/WebP photo under 5 MB.");
     const mime = asset.mimeType || "image/jpeg";
     if (!["image/jpeg", "image/png", "image/webp"].includes(mime))
-      throw new Error("Alege o fotografie JPG, PNG sau WebP.");
+      throw new Error("Choose a JPG, PNG or WebP photo.");
     setImage(`data:${mime};base64,${asset.base64}`);
   }
   if (draft)
@@ -44,7 +44,7 @@ export default function ImportRecipe() {
           let image_url = recipe.image_url;
           if (image_url && !image_url.startsWith("https://")) {
             const url = await uploadImage(image_url);
-            if (!url) throw new Error("Încărcarea fotografiei a eșuat.");
+            if (!url) throw new Error("Photo upload failed.");
             image_url = url;
           }
           await useReceipeStore.getState().addReceipe({ ...recipe, image_url });
@@ -54,21 +54,20 @@ export default function ImportRecipe() {
     );
   return (
     <Page>
-      <Title>Adaugă o rețetă din text sau poză</Title>
+      <Title>Add a recipe from text or a photo</Title>
       <Copy>
-        Lipește o rețetă ori alege o fotografie cu ingredientele și pașii. AI-ul
-        o pregătește pentru registru; tu verifici înainte de salvare.
+        Paste a recipe or pick a photo of the ingredients and steps. The AI prepares it for your collection; you review it before saving.
       </Copy>
       <Card>
         <Field
-          label="Textul rețetei"
+          label="Recipe text"
           value={text}
           onChangeText={setText}
           multiline
         />
         <Action
           secondary
-          label="Alege fotografia rețetei"
+          label="Choose a recipe photo"
           disabled={task.busy}
           onPress={() => task.run(pick)}
         />
@@ -80,18 +79,16 @@ export default function ImportRecipe() {
             />
             <Action
               secondary
-              label="Elimină fotografia"
+              label="Remove photo"
               onPress={() => setImage("")}
             />
           </>
         )}
         <Copy>
-          Textul sau fotografia sunt trimise către OpenRouter pentru procesare.
-          Importul din poză depinde de disponibilitatea unui model gratuit cu
-          suport pentru imagini.
+          The text or photo is sent to OpenRouter for processing. Photo import depends on a free model with image support being available.
         </Copy>
         <Action
-          label="Pregătește rețeta cu AI ✨"
+          label="Prepare recipe with AI ✨"
           disabled={task.busy || (!text.trim() && !image)}
           onPress={() =>
             task.run(async () => {

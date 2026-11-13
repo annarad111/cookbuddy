@@ -25,16 +25,16 @@ async function invoke(payload: object): Promise<unknown> {
     // browser reports it as a network failure (FunctionsFetchError).
     if (error.name === "FunctionsFetchError")
       throw new Error(
-        "Nu pot contacta funcția AI. Verifică internetul și că funcția „cooking-ai” este publicată în Supabase (Edge Functions).",
+        "Can't reach the AI function. Check your internet connection and that the \"cooking-ai\" function is deployed in Supabase (Edge Functions).",
       );
     let message =
-      "AI-ul nu este disponibil. Poți folosi rețetele salvate sau încerca mai târziu.";
+      "AI is not available. You can use your saved recipes or try again later.";
     try {
       const response = await error.context?.json();
       if (response?.error) message = response.error;
       else if (error.context?.status === 404)
         message =
-          "Funcția AI „cooking-ai” nu este publicată în Supabase. Vezi pasul 3 din START_HERE_RO.md.";
+          "The \"cooking-ai\" function is not deployed in Supabase. See step 3 in START_HERE_RO.md.";
     } catch {
       /* No JSON body in the response. */
     }
@@ -88,10 +88,10 @@ export async function suggestRecipe(
   );
   if (excludedRecipe(recipe, context.preferences.excluded))
     throw new Error(
-      "Propunerea conține un ingredient exclus. Încearcă din nou.",
+      "The suggestion contains an excluded ingredient. Please try again.",
     );
   if (recipe.time > context.preferences.maxMinutes)
-    throw new Error("Propunerea depășește timpul ales.");
+    throw new Error("The suggestion exceeds the chosen time.");
   return { ...recipe, meal_type: meal };
 }
 export async function importRecipe(
@@ -122,7 +122,7 @@ export async function estimateCaloriesAI(
   })) as { calories?: unknown; note?: unknown };
   const calories = Number(data?.calories);
   if (!Number.isInteger(calories) || calories < 1 || calories > 5000)
-    throw new Error("Estimarea caloriilor nu este validă. Încearcă din nou.");
+    throw new Error("The calorie estimate is not valid. Please try again.");
   return {
     calories,
     note: typeof data.note === "string" ? data.note : "",

@@ -19,14 +19,14 @@ export default function MealCard({
         {recipe.meal_type && recipe.meal_type !== "any"
           ? mealLabels[recipe.meal_type] + " · "
           : ""}
-        {recipe.time} min · {servings} porții
+        {recipe.time} min · {servings} servings
         {recipe.calories != null
-          ? ` · ≈ ${recipe.calories} kcal/porție`
+          ? ` · ≈ ${recipe.calories} kcal/serving`
           : ""}
       </Copy>
       <Action
         secondary
-        label={open ? "Ascunde rețeta" : "Vezi ingrediente și pași"}
+        label={open ? "Hide recipe" : "Show ingredients and steps"}
         onPress={() => setOpen(!open)}
       />
       {open && (

@@ -48,7 +48,7 @@ export default function Planner() {
       p.maxMinutes < 5 ||
       p.maxMinutes > 180
     )
-      throw new Error("Alege 1–12 persoane, 1–7 zile și 5–180 minute.");
+      throw new Error("Choose 1–12 people, 1–7 days and 5–180 minutes.");
   }
   const context = () => ({
     preferences: p,
@@ -100,15 +100,14 @@ export default function Planner() {
   }
   return (
     <Page>
-      <Title>Ce gătim împreună?</Title>
+      <Title>What are we cooking?</Title>
       <Copy>
-        Un plan simplu pentru voi, cu cantități și cumpărături calculate
-        automat.
+        A simple plan for you both, with quantities and shopping calculated automatically.
       </Copy>
       {!!error && <Copy>{error}</Copy>}
       <Action
         secondary
-        label={loading ? "Se încarcă…" : "Actualizează bucătăria"}
+        label={loading ? "Loading…" : "Refresh kitchen"}
         disabled={task.busy || loading}
         onPress={() =>
           task.run(async () => {
@@ -121,7 +120,7 @@ export default function Planner() {
         <View style={ui.row}>
           <View style={{ flex: 1, minWidth: 100 }}>
             <Field
-              label="Persoane"
+              label="People"
               value={String(p.people || "")}
               numeric
               onChangeText={(v) => set({ people: Number(v) })}
@@ -129,7 +128,7 @@ export default function Planner() {
           </View>
           <View style={{ flex: 1, minWidth: 100 }}>
             <Field
-              label="Zile"
+              label="Days"
               value={String(p.days || "")}
               numeric
               onChangeText={(v) => set({ days: Number(v) })}
@@ -137,19 +136,19 @@ export default function Planner() {
           </View>
         </View>
         <Field
-          label="Timp maxim per rețetă (minute)"
+          label="Max time per recipe (minutes)"
           numeric
           value={String(p.maxMinutes || "")}
           onChangeText={(v) => set({ maxMinutes: Number(v) })}
         />
         <Field
-          label="Preferințe (ex.: bogat în proteine, preparate simple)"
+          label="Preferences (e.g. high protein, simple dishes)"
           value={p.preferences}
           onChangeText={(v) => set({ preferences: v })}
           multiline
         />
         <Field
-          label="Ingrediente excluse, separate prin virgulă"
+          label="Excluded ingredients, comma separated"
           value={p.excluded}
           onChangeText={(v) => set({ excluded: v })}
         />
@@ -159,9 +158,9 @@ export default function Planner() {
             { alignItems: "center", justifyContent: "space-between" },
           ]}
         >
-          <Copy>Repetă mese pentru gătit în avans</Copy>
+          <Copy>Repeat meals for batch cooking</Copy>
           <Switch
-            accessibilityLabel="Repetă mesele"
+            accessibilityLabel="Repeat meals"
             value={p.repeatMeals}
             onValueChange={(v) => set({ repeatMeals: v })}
           />
@@ -170,27 +169,26 @@ export default function Planner() {
           value={p.source}
           options={[
             { value: "mixed", label: "Mix" },
-            { value: "saved", label: "Din registru" },
-            { value: "new", label: "Idei noi" },
+            { value: "saved", label: "My recipes" },
+            { value: "new", label: "New ideas" },
           ]}
           onChange={(v) => set({ source: v })}
         />
         {!!data.plan.length && (
           <Copy>
-            Generarea unui plan nou înlocuiește planul curent și resetează
-            bifele de cumpărături.
+            Generating a new plan replaces the current one and clears the shopping checkmarks.
           </Copy>
         )}
         <Action
-          label="Propune planul cu AI ✨"
+          label="Suggest a plan with AI ✨"
           disabled={task.busy || !household}
           onPress={() =>
-            task.run(() => build(true), "Plan salvat în bucătăria voastră.")
+            task.run(() => build(true), "Plan saved to your kitchen.")
           }
         />
         <Action
           secondary
-          label="Plan din registru · fără AI"
+          label="Plan from my recipes · no AI"
           disabled={task.busy || !household}
           onPress={() => task.run(() => build(false))}
         />
@@ -198,24 +196,23 @@ export default function Planner() {
       {task.status}
       {!household && (
         <Copy>
-          Configurează bucătăria din Profil. Rețetele existente rămân
-          disponibile.
+          Set up the kitchen in Profile. Your existing recipes stay available.
         </Copy>
       )}
-      {data.plan.length > 0 && <Title>Planul vostru</Title>}
+      {data.plan.length > 0 && <Title>Your plan</Title>}
       {data.plan.map((entry, index) => (
         <View key={entry.id} style={{ gap: 10 }}>
           {data.plan[index - 1]?.day !== entry.day && (
             <DayCalories plan={data.plan} day={entry.day} />
           )}
           <Text style={ui.label}>
-            Ziua {entry.day} · {mealLabels[entry.meal]}
+            Day {entry.day} · {mealLabels[entry.meal]}
           </Text>
           <MealCard recipe={entry.recipe} servings={entry.servings}>
             <View style={ui.row}>
               <Action
                 secondary
-                label="− o porție"
+                label="− 1 serving"
                 disabled={task.busy || entry.servings <= 1}
                 onPress={() =>
                   task.run(() =>
@@ -233,7 +230,7 @@ export default function Planner() {
               />
               <Action
                 secondary
-                label="+ o porție"
+                label="+ 1 serving"
                 disabled={task.busy || entry.servings >= 100}
                 onPress={() =>
                   task.run(() =>
@@ -252,13 +249,13 @@ export default function Planner() {
             </View>
             <Action
               secondary
-              label="Înlocuiește cu o idee AI"
+              label="Replace with an AI idea"
               disabled={task.busy}
               onPress={() => task.run(() => replace(entry.id))}
             />
             <Action
               secondary
-              label="Alege din registru"
+              label="Pick from my recipes"
               disabled={task.busy}
               onPress={() =>
                 setManualEntry(manualEntry === entry.id ? null : entry.id)
@@ -283,17 +280,16 @@ export default function Planner() {
                     />
                   ))}
                 <Copy>
-                  Nu vezi rețeta? Verifică tipul mesei, timpul și ingredientele
-                  excluse.
+                  Don't see your recipe? Check its meal type, time and excluded ingredients.
                 </Copy>
               </View>
             )}
             {!receipes.some((r) => r.id === entry.recipe.id) && (
               <Action
-                label="Salvează rețeta în registru"
+                label="Save recipe to my collection"
                 disabled={task.busy}
                 onPress={() =>
-                  task.run(() => save(entry.recipe), "Rețeta a fost salvată.")
+                  task.run(() => save(entry.recipe), "Recipe saved.")
                 }
               />
             )}
@@ -315,8 +311,8 @@ function DayCalories({
   if (!perPerson && missing) return null;
   return (
     <Text style={[ui.title, { fontSize: 19, marginTop: 8 }]}>
-      Ziua {day} · ≈ {perPerson} kcal/persoană
-      {missing ? ` (fără ${missing} ${missing === 1 ? "masă" : "mese"})` : ""}
+      Day {day} · ≈ {perPerson} kcal/person
+      {missing ? ` (${missing} ${missing === 1 ? "meal" : "meals"} without calories)` : ""}
     </Text>
   );
 }

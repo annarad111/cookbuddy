@@ -49,17 +49,17 @@ export default function RecipeDetail() {
       <Page>
         <Action
           secondary
-          label="Înapoi la rețete"
+          label="Back to recipes"
           onPress={() => router.replace("/")}
         />
-        <Copy>Rețeta nu a fost găsită sau încă se încarcă.</Copy>
+        <Copy>Recipe not found, or still loading.</Copy>
       </Page>
     );
   return (
     <Page>
       <Action
         secondary
-        label="Înapoi la rețete"
+        label="Back to recipes"
         onPress={() => router.replace("/")}
       />
       <Title>{recipe.title}</Title>
@@ -70,44 +70,44 @@ export default function RecipeDetail() {
         />
       )}
       <Copy>
-        {recipe.time} minute ·{" "}
+        {recipe.time} min ·{" "}
         {recipe.meal_type && recipe.meal_type !== "any"
           ? mealLabels[recipe.meal_type]
-          : "Orice masă"}{" "}
-        · {recipe.servings} porții în rețeta de bază
+          : "Any meal"}{" "}
+        · {recipe.servings} servings in the base recipe
         {recipe.calories != null
-          ? ` · ≈ ${recipe.calories} kcal/porție`
+          ? ` · ≈ ${recipe.calories} kcal/serving`
           : ""}
       </Copy>
       {recipe.calories == null && (
         <Card>
-          <Text style={ui.label}>Caloriile nu sunt completate</Text>
+          <Text style={ui.label}>Calories are missing</Text>
           <View style={ui.row}>
             <Action
               secondary
-              label="Calculează din ingrediente"
+              label="Calculate from ingredients"
               disabled={caloriesTask.busy}
               onPress={() =>
                 caloriesTask.run(async () => {
                   const e = estimateCalories(recipe);
                   if (e.perServing == null)
                     throw new Error(
-                      `Nu pot calcula pentru: ${e.unknown.join(", ")}. Folosește AI sau editează rețeta.`,
+                      `Can't calculate for: ${e.unknown.join(", ")}. Use AI or edit the recipe.`,
                     );
                   await updateReceipe(recipe.id, { calories: e.perServing });
-                  return `Salvat: ≈ ${e.perServing} kcal/porție.`;
+                  return `Saved: ≈ ${e.perServing} kcal/serving.`;
                 })
               }
             />
             <Action
               secondary
-              label="Estimează cu AI ✨"
+              label="Estimate with AI ✨"
               disabled={caloriesTask.busy}
               onPress={() =>
                 caloriesTask.run(async () => {
                   const r = await estimateCaloriesAI(recipe);
                   await updateReceipe(recipe.id, { calories: r.calories });
-                  return `Salvat: ≈ ${r.calories} kcal/porție.${r.note ? " " + r.note : ""}`;
+                  return `Saved: ≈ ${r.calories} kcal/serving.${r.note ? " " + r.note : ""}`;
                 })
               }
             />
@@ -118,7 +118,7 @@ export default function RecipeDetail() {
       <View style={ui.row}>
         <Action
           secondary
-          label={recipe.is_favorite ? "♥ Favorită" : "♡ Adaugă la favorite"}
+          label={recipe.is_favorite ? "♥ Favorite" : "♡ Add to favorites"}
           disabled={task.busy}
           onPress={() =>
             task.run(() =>
@@ -128,7 +128,7 @@ export default function RecipeDetail() {
         />
         <Action
           secondary
-          label="Editează rețeta"
+          label="Edit recipe"
           onPress={() =>
             router.push({
               pathname: "/new-receipe",
@@ -139,18 +139,18 @@ export default function RecipeDetail() {
       </View>
       <Card>
         <Field
-          label="Porții de pregătit"
+          label="Servings to cook"
           numeric
           value={servingsText}
           onChangeText={(v) => setServingsText(v.replace(/[^\d]/g, ""))}
         />
         {recipe.calories != null && (
           <Copy>
-            ≈ {recipe.calories * servings} kcal pentru {servings}{" "}
-            {servings === 1 ? "porție" : "porții"}
+            ≈ {recipe.calories * servings} kcal for {servings}{" "}
+            {servings === 1 ? "serving" : "servings"}
           </Copy>
         )}
-        <Title>Ingrediente</Title>
+        <Title>Ingredients</Title>
         {recipe.ingredients.map((i) => (
           <Copy key={i.id}>
             {i.name} — {scaledIngredient(i, servings, recipe.servings)}
@@ -158,7 +158,7 @@ export default function RecipeDetail() {
         ))}
       </Card>
       <Card>
-        <Title>Preparare</Title>
+        <Title>Method</Title>
         {recipe.steps
           .split("\n")
           .filter(Boolean)
@@ -169,15 +169,15 @@ export default function RecipeDetail() {
           ))}
         {!!recipe.notes && (
           <>
-            <Text style={ui.label}>Notițele rețetei</Text>
+            <Text style={ui.label}>Recipe notes</Text>
             <Copy>{recipe.notes}</Copy>
           </>
         )}
       </Card>
       <Card>
-        <Title>Cum a ieșit?</Title>
+        <Title>How did it turn out?</Title>
         <Copy>
-          Observațiile voastre sunt folosite la recomandările următoare.
+          Your feedback is used for future suggestions.
         </Copy>
         <Choice
           value={rating}
@@ -188,13 +188,13 @@ export default function RecipeDetail() {
           onChange={setRating}
         />
         <Field
-          label="Comentariu (ex.: mai puțin sos data viitoare)"
+          label="Comment (e.g. less sauce next time)"
           value={comment}
           onChangeText={setComment}
           multiline
         />
         <Action
-          label="Salvează feedbackul"
+          label="Save feedback"
           disabled={task.busy || !household}
           onPress={() =>
             task.run(async () => {
@@ -206,7 +206,7 @@ export default function RecipeDetail() {
                     id: Crypto.randomUUID(),
                     recipeId: recipe.id,
                     title: recipe.title,
-                    author: user?.email?.split("@")[0] || "Noi",
+                    author: user?.email?.split("@")[0] || "Us",
                     rating: Number(rating),
                     comment: comment.slice(0, 2000),
                     createdAt: new Date().toISOString(),
@@ -214,7 +214,7 @@ export default function RecipeDetail() {
                 ].slice(-200),
               }));
               setComment("");
-            }, "Feedback salvat.")
+            }, "Feedback saved.")
           }
         />
         {data.feedback
@@ -225,7 +225,7 @@ export default function RecipeDetail() {
             <View key={f.id} style={{ gap: 4 }}>
               <Text style={ui.label}>
                 {f.author} · {f.rating} ★ ·{" "}
-                {new Date(f.createdAt).toLocaleDateString("ro-RO")}
+                {new Date(f.createdAt).toLocaleDateString("en-GB")}
               </Text>
               <Copy>{f.comment}</Copy>
             </View>
@@ -235,17 +235,16 @@ export default function RecipeDetail() {
       {!confirmDelete ? (
         <Action
           secondary
-          label="Șterge rețeta"
+          label="Delete recipe"
           onPress={() => setConfirmDelete(true)}
         />
       ) : (
         <Card>
           <Copy>
-            Ștergi rețeta din registru? Mesele deja planificate păstrează copia
-            lor.
+            Delete this recipe from your collection? Meals already planned keep their own copy.
           </Copy>
           <Action
-            label="Da, șterge rețeta"
+            label="Yes, delete recipe"
             disabled={task.busy}
             onPress={() =>
               task.run(async () => {
@@ -256,7 +255,7 @@ export default function RecipeDetail() {
           />
           <Action
             secondary
-            label="Păstrează rețeta"
+            label="Keep recipe"
             onPress={() => setConfirmDelete(false)}
           />
         </Card>

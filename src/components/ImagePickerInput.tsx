@@ -27,8 +27,8 @@ export default function ImagePickerInput({ image, onChange, width = '85%' }: Pro
 
     if (!permission.granted) {
       Alert.alert(
-        "Permisiune necesară",
-        "Trebuie să permiți accesul la galerie.",
+        "Permission needed",
+        "Please allow access to your photo library.",
       );
       return;
     }
@@ -52,9 +52,9 @@ export default function ImagePickerInput({ image, onChange, width = '85%' }: Pro
       ) : (
         <>
           <Ionicons name="image-outline" size={32} color="#B5A9A5" />
-          <Text style={styles.title}>Adaugă o fotografie</Text>
+          <Text style={styles.title}>Add a photo</Text>
           <Text style={styles.subtitle}>
-            sau <Text style={styles.link}>alege din fișiere</Text>
+            or <Text style={styles.link}>browse files</Text>
           </Text>
         </>
       )}

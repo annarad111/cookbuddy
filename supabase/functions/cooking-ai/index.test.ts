@@ -76,10 +76,10 @@ Deno.test(
           return json({ error: "upstream" }, upstreamStatus);
         const importing = format.json_schema?.name === "cookbuddy_import";
         const answer = format.json_schema?.name === "cookbuddy_calories"
-          ? { calories: badCalories ? 99999 : 412.4, note: "Ulei estimat." }
+          ? { calories: badCalories ? 99999 : 412.4, note: "Oil estimated." }
           : importing
           ? noRecipe
-            ? { recipe: null, error: "Nu e o rețetă." }
+            ? { recipe: null, error: "Not a recipe." }
             : { recipe, error: null }
           : recipe;
         return json({
@@ -168,7 +168,7 @@ Deno.test(
       r = await handler(request(caloriesBody));
       const kcal = await r.json();
       assert(
-        r.status === 200 && kcal.calories === 412 && kcal.note === "Ulei estimat.",
+        r.status === 200 && kcal.calories === 412 && kcal.note === "Oil estimated.",
         "Return a rounded calorie estimate per portion",
       );
       badCalories = true;

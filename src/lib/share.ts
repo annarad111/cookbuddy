@@ -18,9 +18,9 @@ export async function shareText(message: string): Promise<string> {
     }
     if (nav?.clipboard?.writeText) {
       await nav.clipboard.writeText(message);
-      return "Textul a fost copiat în clipboard.";
+      return "Copied to the clipboard.";
     }
-    throw new Error("Browserul nu permite distribuirea. Copiază textul manual.");
+    throw new Error("This browser can't share. Copy the text manually.");
   }
   await Share.share({ message });
   return "";

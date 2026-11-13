@@ -28,18 +28,18 @@ export default function HomeScreen() {
           alignSelf: "center",
         }}
       >
-        <Text style={ui.title}>Registrul vostru de rețete</Text>
+        <Text style={ui.title}>Your recipe collection</Text>
         <TextInput
           style={ui.input}
-          accessibilityLabel="Caută o rețetă"
-          placeholder="Caută o rețetă…"
+          accessibilityLabel="Search recipes"
+          placeholder="Search recipes…"
           value={search}
           onChangeText={setSearch}
         />
         <Choice
           value={meal}
           options={[
-            { value: "all", label: "Toate" },
+            { value: "all", label: "All" },
             ...(["breakfast", "lunch", "dinner"] as Meal[]).map((value) => ({
               value: value as Meal | "all",
               label: mealLabels[value],
@@ -50,21 +50,21 @@ export default function HomeScreen() {
         <View style={ui.row}>
           <Action
             secondary
-            label="♥ Favorite"
+            label="♥ Favorites"
             onPress={() => router.push("/favorites")}
           />
           <Action
-            label="+ Rețetă"
+            label="+ Recipe"
             onPress={() => router.push("/new-receipe")}
           />
           <Action
             secondary
-            label="Import cu AI ✨"
+            label="Import with AI ✨"
             onPress={() => router.push("/import-recipe")}
           />
           <Action
             secondary
-            label={loading ? "Se încarcă…" : "Actualizează"}
+            label={loading ? "Loading…" : "Refresh"}
             disabled={task.busy || loading}
             onPress={() => task.run(fetchReceipes)}
           />
@@ -78,8 +78,8 @@ export default function HomeScreen() {
         data={filtered}
         emptyMessage={
           loading
-            ? "Se încarcă rețetele…"
-            : "Nicio rețetă aici încă.\nAdaugă una sau import-o cu AI."
+            ? "Loading recipes…"
+            : "No recipes here yet.\nAdd one or import it with AI."
         }
       />
     </View>

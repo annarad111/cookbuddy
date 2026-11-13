@@ -11,7 +11,7 @@ export default function NewRecipe() {
     return (
       <Page>
         <Copy>
-          Rețeta nu este încărcată. Revino la registru și actualizează lista.
+          This recipe isn't loaded. Go back to your recipes and refresh the list.
         </Copy>
       </Page>
     );
@@ -25,7 +25,7 @@ export default function NewRecipe() {
           const url = await uploadImage(image_url);
           if (!url)
             throw new Error(
-              "Fotografia nu a putut fi încărcată. Încearcă din nou.",
+              "The photo could not be uploaded. Please try again.",
             );
           image_url = url;
         }

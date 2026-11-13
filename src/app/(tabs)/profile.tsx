@@ -23,11 +23,11 @@ export default function Profile() {
   const task = useTask();
   return (
     <Page>
-      <Title>Bucătăria voastră</Title>
+      <Title>Your kitchen</Title>
       <Copy>{session?.user.email}</Copy>
       <Action
         secondary
-        label="Încarcă / actualizează bucătăria"
+        label="Load / refresh kitchen"
         disabled={task.busy}
         onPress={() =>
           task.run(async () => {
@@ -42,21 +42,18 @@ export default function Profile() {
         <Card>
           <Text style={ui.label}>{household.name}</Text>
           <Copy>
-            Introduceți același cod în cele două conturi pentru a folosi același
-            registru, plan, cămară și aceeași listă de cumpărături. Codul oferă
-            acces la bucătărie; trimite-l doar persoanei cu care vrei să o
-            împarți.
+            Use the same code on both accounts to share the same recipes, plan, pantry and shopping list. The code gives access to the kitchen; only send it to the person you want to share it with.
           </Copy>
           <Text selectable style={ui.copy}>
             {household.invite_code}
           </Text>
           <Action
             secondary
-            label="Distribuie codul"
+            label="Share code"
             onPress={() =>
               task.run(() =>
                 shareText(
-                  `Codul bucătăriei noastre CookBuddy: ${household.invite_code}`,
+                  `Our CookBuddy kitchen code: ${household.invite_code}`,
                 ),
               )
             }
@@ -64,7 +61,7 @@ export default function Profile() {
           {household.owner_id === session?.user.id && (
             <Action
               secondary
-              label="Generează un cod nou"
+              label="Generate a new code"
               disabled={task.busy}
               onPress={() =>
                 task.run(async () => {
@@ -74,13 +71,13 @@ export default function Profile() {
                   );
                   if (error) throw new Error(error.message);
                   await load();
-                }, "Codul vechi nu mai permite conectări noi. Membrii existenți își păstrează accesul.")
+                }, "The old code no longer allows new members. Existing members keep their access.")
               }
             />
           )}
           <Action
             secondary
-            label="Mută rețetele mele private în această bucătărie"
+            label="Move my private recipes into this kitchen"
             disabled={task.busy}
             onPress={() =>
               task.run(async () => {
@@ -90,49 +87,46 @@ export default function Profile() {
                 );
                 if (error) throw new Error(error.message);
                 await useReceipeStore.getState().fetchReceipes();
-              }, "Rețetele tale sunt acum în registrul comun.")
+              }, "Your recipes are now in the shared collection.")
             }
           />
         </Card>
       )}
       <Card>
         <Field
-          label="Codul bucătăriei partenerului"
+          label="Partner's kitchen code"
           value={code}
           onChangeText={setCode}
         />
         <Copy>
-          Conectarea schimbă bucătăria activă. Rețetele private nu sunt mutate
-          automat.
+          Joining switches your active kitchen. Private recipes are not moved automatically.
         </Copy>
         <Action
-          label="Conectează-te la bucătărie"
+          label="Join kitchen"
           disabled={task.busy || !code.trim()}
           onPress={() =>
             task.run(async () => {
               await join(code);
               await useReceipeStore.getState().fetchReceipes();
               setCode("");
-            }, "Sunteți conectați la aceeași bucătărie.")
+            }, "You are now in the same kitchen.")
           }
         />
       </Card>
       <Card>
-        <Text style={ui.label}>Calorii pentru rețetele existente</Text>
+        <Text style={ui.label}>Calories for existing recipes</Text>
         <Copy>
-          Calculează din ingrediente caloriile pentru toate rețetele care nu le
-          au încă. Nu folosește cereri AI. Pentru rețetele cu ingrediente
-          necunoscute, deschide rețeta și folosește „Estimează cu AI”.
+          Calculates calories from the ingredients for every recipe that doesn't have them yet. Uses no AI requests. For recipes with unknown ingredients, open the recipe and use "Estimate with AI".
         </Copy>
         <Action
           secondary
-          label="Calculează caloriile lipsă"
+          label="Calculate missing calories"
           disabled={task.busy}
           onPress={() =>
             task.run(async () => {
               const store = useReceipeStore.getState();
               const missing = store.receipes.filter((r) => r.calories == null);
-              if (!missing.length) return "Toate rețetele au deja calorii.";
+              if (!missing.length) return "Every recipe already has calories.";
               const skipped: string[] = [];
               let done = 0;
               for (const r of missing) {
@@ -144,9 +138,9 @@ export default function Profile() {
                 }
               }
               return (
-                `Calculat pentru ${done} ${done === 1 ? "rețetă" : "rețete"}.` +
+                `Calculated for ${done} ${done === 1 ? "recipe" : "recipes"}.` +
                 (skipped.length
-                  ? ` Necesită AI sau editare: ${skipped.join(", ")}.`
+                  ? ` Need AI or editing: ${skipped.join(", ")}.`
                   : "")
               );
             })
@@ -154,22 +148,17 @@ export default function Profile() {
         />
       </Card>
       <Card>
-        <Text style={ui.label}>Despre recomandările AI</Text>
+        <Text style={ui.label}>About AI suggestions</Text>
         <Copy>
-          CookBuddy folosește exclusiv modele gratuite OpenRouter. Se trimit
-          preferințele, rețetele relevante, cămara și ultimele observații
-          culinare. Limita aplicației: 20 de cereri/zi pentru fiecare cont.
-          Disponibilitatea depinde și de limita contului OpenRouter.
+          CookBuddy only uses free OpenRouter models. Your preferences, relevant recipes, pantry and recent cooking feedback are sent. App limit: 20 requests per day per account. Availability also depends on the OpenRouter account limit.
         </Copy>
         <Copy>
-          Ingredientele excluse se verifică după denumire; revizuiește
-          întotdeauna etichetele dacă există alergii. Cantitățile ilizibile din
-          import necesită verificare manuală.
+          Excluded ingredients are matched by name; always check labels if there are allergies. Unreadable quantities from imports need a manual check.
         </Copy>
       </Card>
       <Action
         secondary
-        label="Deconectare"
+        label="Log out"
         disabled={task.busy}
         onPress={() =>
           task.run(async () => {

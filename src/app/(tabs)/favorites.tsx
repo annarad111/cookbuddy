@@ -9,7 +9,7 @@ export default function Favorites() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <RecipeList data={favorites} emptyMessage={"Nicio rețetă favorită încă.\nApasă ♡ la o rețetă ca s-o adaugi."} />
+      <RecipeList data={favorites} emptyMessage={"No favorite recipes yet.\nTap ♡ on a recipe to add it."} />
     </SafeAreaView>
   );
 }

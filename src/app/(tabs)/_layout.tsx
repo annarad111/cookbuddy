@@ -14,7 +14,7 @@ export default function Layout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Rețete",
+          title: "Recipes",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="restaurant-outline" size={size} color={color} />
           ),
@@ -32,8 +32,8 @@ export default function Layout() {
       <Tabs.Screen
         name="shopping"
         options={{
-          title: "Cumpărături",
-          tabBarLabel: "Listă",
+          title: "Shopping",
+          tabBarLabel: "List",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart-outline" size={size} color={color} />
           ),
@@ -42,7 +42,7 @@ export default function Layout() {
       <Tabs.Screen
         name="pantry"
         options={{
-          title: "Cămară",
+          title: "Pantry",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="basket-outline" size={size} color={color} />
           ),
@@ -51,7 +51,7 @@ export default function Layout() {
       <Tabs.Screen
         name="favorites"
         options={{
-          title: "Favorite",
+          title: "Favorites",
           href: null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="heart-outline" size={size} color={color} />
@@ -61,7 +61,7 @@ export default function Layout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profil",
+          title: "Profile",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-outline" size={size} color={color} />
           ),

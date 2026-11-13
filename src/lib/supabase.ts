@@ -37,7 +37,7 @@ export const uploadImage = async (uri: string): Promise<string | null> => {
       arrayBuffer = decode(base64);
     }
     if (arrayBuffer.byteLength > 5 * 1024 * 1024)
-      throw new Error("Imaginea depășește 5 MB.");
+      throw new Error("The image is larger than 5 MB.");
     const extension =
       contentType === "image/png"
         ? "png"
