@@ -139,3 +139,46 @@ test("AI plans require every slot once, valid numeric amounts and filters", () =
     ),
   );
 });
+
+test("estimates calories per portion from known ingredients", async () => {
+  const { estimateCalories, findFood } = await import("../src/domain/nutrition.ts");
+  // Longest name wins: "piept de pui" is leaner than generic "pui".
+  assert.equal(findFood("Piept de pui").kcal, 120);
+  assert.equal(findFood("Ulei de măsline").kcal, 884);
+  assert.equal(findFood("Unt de arahide").kcal, 588);
+  assert.equal(findFood("Mărar"), findFood("marar")); // spices, not "măr"
+  assert.equal(findFood("Mărar").kcal, 0);
+  const r = {
+    servings: 2,
+    ingredients: [
+      ingredient("Piept de pui", 500, "g"), // 600
+      ingredient("Orez", 0.2, "kg"), // 720
+      { id: "o", name: "Ouă", quantity: 2, unit: "buc", amount: "2 buc" }, // 157.3
+      ingredient("Ulei", 1, "lingură"), // 15 ml * 0.92 g/ml * 8.84 = 122
+      { id: "s", name: "Sare", quantity: null, unit: "", amount: "după gust" },
+    ],
+  };
+  const e = estimateCalories(r);
+  assert.deepEqual(e.unknown, []);
+  assert.equal(e.total, 1599);
+  assert.equal(e.perServing, 800);
+  const partial = estimateCalories({
+    servings: 2,
+    ingredients: [ingredient("Orez", 100, "g"), ingredient("Sos secret", 50, "g")],
+  });
+  assert.equal(partial.perServing, null, "never guess unknown ingredients");
+  assert.deepEqual(partial.unknown, ["Sos secret"]);
+});
+
+test("AI recipes keep a sane calorie estimate and drop invalid ones", () => {
+  const base = {
+    title: "Orez",
+    servings: 2,
+    time: 20,
+    ingredients: [{ name: "Orez", quantity: 150, unit: "g" }],
+    steps: "Fierbe.",
+  };
+  assert.equal(validateRecipe({ ...base, calories: 412.6 }, "a").calories, 413);
+  assert.equal(validateRecipe({ ...base, calories: 99999 }, "b").calories, null);
+  assert.equal(validateRecipe(base, "c").calories, null);
+});

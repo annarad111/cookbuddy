@@ -71,6 +71,12 @@ export default function RecipeList({ data, emptyMessage }: Props) {
                   <Ionicons name="time-outline" size={18} color="#A8635A" />
                   {item.time} min
                 </Text>
+                {item.calories != null && (
+                  <Text style={styles.subtitle}>
+                    <Ionicons name="flame-outline" size={18} color="#A8635A" />
+                    {item.calories} kcal
+                  </Text>
+                )}
               </View>
             </View>
           </Pressable>
@@ -113,6 +119,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   placeholderText: { fontSize: 24 },
-  timeContainer: { flexDirection: "row", gap: 8 },
+  timeContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   favoriteButton: { padding: 8 },
 });

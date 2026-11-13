@@ -30,6 +30,7 @@ const recipe = (meal) => ({
     },
   ],
   steps: "Prepară ingredientele.\nGătește și servește.",
+  calories: 400,
   user_id: userId,
   household_id: houseId,
 });
@@ -219,6 +220,7 @@ test(
         .click();
       await page.getByText("Planul vostru", { exact: true }).waitFor();
       assert.equal(kitchen.plan.length, 9);
+      await page.getByText("Ziua 1 · ≈ 1200 kcal/persoană", { exact: true }).waitFor();
       await page
         .getByRole("button", { name: "+ o porție", exact: true })
         .first()
@@ -274,12 +276,18 @@ test(
       await page
         .getByLabel("Numele rețetei", { exact: true })
         .fill("Rețeta verificată de Ana");
+      // Imported: 500 g chicken breast for 2 portions -> 600 kcal / 2.
+      await page
+        .getByRole("button", { name: "Calculează din ingrediente", exact: true })
+        .click();
+      await page.getByText("≈ 300 kcal/porție (600 kcal în total).", { exact: true }).waitFor();
       await page
         .getByRole("button", { name: "Salvează rețeta", exact: true })
         .click();
       await page
         .getByText("Rețeta verificată de Ana", { exact: true })
         .waitFor();
+      assert.equal(recipes.at(-1).calories, 300, "calories saved with the recipe");
       await page.setViewportSize({ width: 390, height: 844 });
       await page.getByRole("tab", { name: /Plan$/ }).click();
       if (process.env.SCREENSHOT_DIR)

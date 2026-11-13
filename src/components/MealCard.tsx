@@ -20,6 +20,9 @@ export default function MealCard({
           ? mealLabels[recipe.meal_type] + " · "
           : ""}
         {recipe.time} min · {servings} porții
+        {recipe.calories != null
+          ? ` · ≈ ${recipe.calories} kcal/porție`
+          : ""}
       </Copy>
       <Action
         secondary

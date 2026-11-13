@@ -9,6 +9,8 @@ import {
   ingredientQuantity,
   formatQuantity,
 } from "@/domain/cooking";
+import { estimateCalories } from "@/domain/nutrition";
+import { estimateCaloriesAI } from "@/lib/cooking-ai";
 import ImagePickerInput from "./ImagePickerInput";
 import {
   Action,
@@ -51,6 +53,10 @@ export default function RecipeEditor({
       },
   );
   const [rawQuantity, setRawQuantity] = useState<Record<string, string>>({});
+  const caloriesTask = useTask();
+  // What the next calorie calculation sees: ingredients as currently typed.
+  const filledIngredients = () =>
+    recipe.ingredients.filter((i) => i.name.trim());
   const update = (fields: Partial<Recipe>) =>
     setRecipe((r) => ({ ...r, ...fields }));
   const updateIngredient = (id: string, fields: Partial<Ingredient>) =>
@@ -212,6 +218,59 @@ export default function RecipeEditor({
           })
         }
       />
+      <Card>
+        <Field
+          label="Calorii pe porție (kcal) · opțional"
+          numeric
+          value={recipe.calories != null ? String(recipe.calories) : ""}
+          onChangeText={(v) => {
+            const digits = v.replace(/[^\d]/g, "");
+            update({ calories: digits ? Math.min(5000, Number(digits)) : null });
+          }}
+        />
+        <Copy>
+          Nu le știi? Completează întâi ingredientele, apoi lasă aplicația să le
+          calculeze. Valorile sunt estimări.
+        </Copy>
+        <View style={ui.row}>
+          <Action
+            secondary
+            label="Calculează din ingrediente"
+            disabled={caloriesTask.busy}
+            onPress={() =>
+              caloriesTask.run(async () => {
+                if (!filledIngredients().length || !(recipe.servings > 0))
+                  throw new Error("Completează ingredientele și porțiile.");
+                const e = estimateCalories(recipe);
+                if (e.perServing == null)
+                  throw new Error(
+                    `Nu pot calcula pentru: ${e.unknown.join(", ")}. Verifică denumirea și cantitatea (g, ml, buc) sau folosește AI.`,
+                  );
+                update({ calories: e.perServing });
+                return `≈ ${e.perServing} kcal/porție (${e.total} kcal în total).`;
+              })
+            }
+          />
+          <Action
+            secondary
+            label="Estimează cu AI ✨"
+            disabled={caloriesTask.busy}
+            onPress={() =>
+              caloriesTask.run(async () => {
+                if (!filledIngredients().length || !(recipe.servings > 0))
+                  throw new Error("Completează ingredientele și porțiile.");
+                const r = await estimateCaloriesAI({
+                  ...recipe,
+                  ingredients: filledIngredients(),
+                });
+                update({ calories: r.calories });
+                return `AI: ≈ ${r.calories} kcal/porție.${r.note ? " " + r.note : ""}`;
+              })
+            }
+          />
+        </View>
+        {caloriesTask.status}
+      </Card>
       <Card>
         <Field
           label="Pași (câte unul pe rând)"

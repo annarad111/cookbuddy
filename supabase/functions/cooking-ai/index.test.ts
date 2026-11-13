@@ -21,6 +21,7 @@ Deno.test(
     let requestCount = 0;
     let schemaUnsupported = false;
     let noRecipe = false;
+    let badCalories = false;
     const formats: string[] = [];
     const recipe = {
       title: "Orez cu legume",
@@ -74,7 +75,9 @@ Deno.test(
         if (upstreamStatus !== 200)
           return json({ error: "upstream" }, upstreamStatus);
         const importing = format.json_schema?.name === "cookbuddy_import";
-        const answer = importing
+        const answer = format.json_schema?.name === "cookbuddy_calories"
+          ? { calories: badCalories ? 99999 : 412.4, note: "Ulei estimat." }
+          : importing
           ? noRecipe
             ? { recipe: null, error: "Nu e o rețetă." }
             : { recipe, error: null }
@@ -148,6 +151,30 @@ Deno.test(
       r = await handler(request({ action: "import", text: "Salut" }));
       assert(r.status === 422, "Explain when the material has no recipe");
       noRecipe = false;
+      const calls = requestCount;
+      r = await handler(request({ action: "calories", recipe: { servings: 2 } }));
+      assert(
+        r.status === 400 && requestCount === calls,
+        "Reject calorie requests without ingredients before calling the model",
+      );
+      const caloriesBody = {
+        action: "calories",
+        recipe: {
+          title: "Orez",
+          servings: 2,
+          ingredients: [{ name: "Orez", quantity: 150, unit: "g", amount: "150 g" }],
+        },
+      };
+      r = await handler(request(caloriesBody));
+      const kcal = await r.json();
+      assert(
+        r.status === 200 && kcal.calories === 412 && kcal.note === "Ulei estimat.",
+        "Return a rounded calorie estimate per portion",
+      );
+      badCalories = true;
+      r = await handler(request(caloriesBody));
+      assert(r.status === 502, "Reject absurd calorie estimates");
+      badCalories = false;
       r = await handler(
         request({
           ...body,

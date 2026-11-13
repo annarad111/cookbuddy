@@ -41,6 +41,11 @@ export const recipeSchema = {
       description: "Pașii de preparare, câte unul pe rând, separați prin \\n.",
     },
     notes: { type: "string", description: "Observații sau \"\"." },
+    calories: {
+      type: ["integer", "null"],
+      description:
+        "Estimare kcal pentru O porție (nu toată rețeta). Pentru import: doar dacă apare în material, altfel null.",
+    },
   },
   required: [
     "title",
@@ -50,6 +55,7 @@ export const recipeSchema = {
     "ingredients",
     "steps",
     "notes",
+    "calories",
   ],
   additionalProperties: false,
 } as const;
@@ -89,13 +95,33 @@ export const importSchema = {
   additionalProperties: false,
 } as const;
 
-export function responseFormat(action: "plan" | "suggest" | "import") {
+export const caloriesSchema = {
+  type: "object",
+  properties: {
+    calories: {
+      type: "integer",
+      description: "Estimare kcal pentru O porție, rotunjită.",
+    },
+    note: {
+      type: "string",
+      description: "O propoziție despre presupunerile făcute (ex. cantitatea de ulei).",
+    },
+  },
+  required: ["calories", "note"],
+  additionalProperties: false,
+} as const;
+
+export function responseFormat(
+  action: "plan" | "suggest" | "import" | "calories",
+) {
   const schema =
     action === "plan"
       ? planSchema
       : action === "import"
         ? importSchema
-        : recipeSchema;
+        : action === "calories"
+          ? caloriesSchema
+          : recipeSchema;
   return {
     type: "json_schema",
     json_schema: { name: `cookbuddy_${action}`, strict: true, schema },

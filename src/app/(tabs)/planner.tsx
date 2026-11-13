@@ -23,6 +23,7 @@ import {
   useTask,
 } from "@/components/KitchenUI";
 import MealCard from "@/components/MealCard";
+import { dayCalories } from "@/domain/nutrition";
 
 export default function Planner() {
   const { data, household, loading, error, commit, load } = useKitchenStore();
@@ -202,8 +203,11 @@ export default function Planner() {
         </Copy>
       )}
       {data.plan.length > 0 && <Title>Planul vostru</Title>}
-      {data.plan.map((entry) => (
+      {data.plan.map((entry, index) => (
         <View key={entry.id} style={{ gap: 10 }}>
+          {data.plan[index - 1]?.day !== entry.day && (
+            <DayCalories plan={data.plan} day={entry.day} />
+          )}
           <Text style={ui.label}>
             Ziua {entry.day} · {mealLabels[entry.meal]}
           </Text>
@@ -297,5 +301,22 @@ export default function Planner() {
         </View>
       ))}
     </Page>
+  );
+}
+
+function DayCalories({
+  plan,
+  day,
+}: {
+  plan: { day: number; recipe: Recipe }[];
+  day: number;
+}) {
+  const { perPerson, missing } = dayCalories(plan, day);
+  if (!perPerson && missing) return null;
+  return (
+    <Text style={[ui.title, { fontSize: 19, marginTop: 8 }]}>
+      Ziua {day} · ≈ {perPerson} kcal/persoană
+      {missing ? ` (fără ${missing} ${missing === 1 ? "masă" : "mese"})` : ""}
+    </Text>
   );
 }

@@ -25,6 +25,8 @@ export type Recipe = {
   notes?: string;
   is_favorite?: boolean;
   meal_type?: Meal | "any";
+  /** Estimated kcal per portion; null/undefined when unknown. */
+  calories?: number | null;
 };
 export type PlanEntry = {
   id: string;
@@ -310,6 +312,14 @@ export function validateRecipe(value: unknown, id: string): Recipe {
     }),
     steps: str(r.steps, 16000),
     notes: typeof r.notes === "string" ? r.notes.slice(0, 4000) : "",
+    // Optional estimate; anything outside a sane range is dropped rather than rejected.
+    calories:
+      typeof r.calories === "number" &&
+      Number.isFinite(r.calories) &&
+      r.calories > 0 &&
+      r.calories <= 5000
+        ? Math.round(r.calories)
+        : null,
   };
 }
 export function validatePlan(value: unknown, p: Preferences): PlanEntry[] {

@@ -28,11 +28,15 @@ const EDITABLE = [
   "notes",
   "is_favorite",
   "meal_type",
+  "calories",
 ] as const;
 function editable(fields: Partial<Recipe>): Partial<Recipe> {
   const out: Record<string, unknown> = {};
   for (const key of EDITABLE)
     if (fields[key] !== undefined) out[key] = fields[key];
+  // Only send calories when there is a value, so saving keeps working even
+  // before the calories migration has been applied.
+  if (out.calories === null) delete out.calories;
   return out as Partial<Recipe>;
 }
 export const useReceipeStore = create<ReceipeState>((set, get) => ({
@@ -98,9 +102,14 @@ export const useReceipeStore = create<ReceipeState>((set, get) => ({
     return data as Recipe;
   },
   updateReceipe: async (id, fields) => {
+    const changes = editable(fields);
+    // Clearing a value that was set before: the column exists, so null is safe.
+    const previous = get().receipes.find((r) => r.id === id);
+    if (fields.calories === null && previous?.calories != null)
+      changes.calories = null;
     const { data, error } = await supabase
       .from("recipes")
-      .update(editable(fields))
+      .update(changes)
       .eq("id", id)
       .select()
       .single();

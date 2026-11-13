@@ -13,6 +13,7 @@ Versiunea aceasta extinde proiectul Expo 54 existent. Nu este o aplicație publi
 - Listă agregată de cumpărături, cu bife comune, scăderea stocului din cămară și distribuire prin meniul dispozitivului.
 - Cămară și „Gătim cu ce avem”: sugestii AI care încearcă să minimizeze cumpărăturile.
 - Feedback cu stele și comentarii, folosit în contextul recomandărilor următoare.
+- Calorii pe porție: introduse manual, calculate local din ingrediente (tabel cu valori uzuale, fără AI) sau estimate cu AI. Planul arată totalul aproximativ pe zi și persoană.
 - Import AI din text sau fotografie JPG/PNG/WebP; formular editabil înainte de salvare.
 - Bucătărie comună pentru două conturi, conectate prin cod. Rețetele noi sunt comune; cele vechi pot fi mutate explicit din Profil.
 - Salvare în Supabase, control al accesului și detectarea conflictelor între dispozitive.
@@ -41,6 +42,7 @@ Fă un backup al bazei de date existente înaintea migrării.
 1. În Supabase Dashboard, deschide **SQL Editor**.
 2. Deschide local `supabase/migrations/202611130001_cookbuddy_kitchen.sql`.
 3. Copiază tot conținutul în SQL Editor și rulează-l.
+4. La fel, rulează apoi `supabase/migrations/202611140001_recipe_calories.sql` (adaugă coloana `calories`). Până o rulezi, rețetele se salvează în continuare, dar fără calorii.
 
 Migrarea păstrează rețetele existente, adaugă `household_id` și `meal_type` și creează tabelele pentru bucătării, membri, stare comună și limite AI. Poate fi rulată din nou.
 
@@ -110,7 +112,7 @@ Pentru actualizări live, activează tabelele `cookbuddy_state` și `recipes` î
 - Modificarea planului, porțiilor sau cămării resetează bifele listei.
 - Modificarea unei rețete din registru nu schimbă retroactiv copia deja salvată în plan. Realege rețeta pentru a actualiza planul.
 
-Recomandările nu sunt un plan medical. Excluderile folosesc verificare după denumire, nu o bază de alergeni: verifică ingredientele și etichetele în cazul alergiilor. Nu există calcule nutriționale sau prețuri estimate prezentate ca valori exacte.
+Recomandările nu sunt un plan medical. Excluderile folosesc verificare după denumire, nu o bază de alergeni: verifică ingredientele și etichetele în cazul alergiilor. Caloriile sunt estimări (valori medii pentru ingrediente crude sau estimarea AI), nu valori de etichetă; nu există alte calcule nutriționale sau prețuri.
 
 ## Verificări pentru dezvoltare
 

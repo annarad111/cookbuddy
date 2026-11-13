@@ -103,3 +103,28 @@ export async function importRecipe(
     `import-${Date.now()}`,
   );
 }
+/** AI estimate of kcal per portion for a recipe (uses one AI request from the daily quota). */
+export async function estimateCaloriesAI(
+  recipe: Pick<Recipe, "title" | "servings" | "ingredients">,
+): Promise<{ calories: number; note: string }> {
+  const data = (await invoke({
+    action: "calories",
+    recipe: {
+      title: recipe.title,
+      servings: recipe.servings,
+      ingredients: recipe.ingredients.map(({ name, quantity, unit, amount }) => ({
+        name,
+        quantity,
+        unit,
+        amount,
+      })),
+    },
+  })) as { calories?: unknown; note?: unknown };
+  const calories = Number(data?.calories);
+  if (!Number.isInteger(calories) || calories < 1 || calories > 5000)
+    throw new Error("Estimarea caloriilor nu este validă. Încearcă din nou.");
+  return {
+    calories,
+    note: typeof data.note === "string" ? data.note : "",
+  };
+}

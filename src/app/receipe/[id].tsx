@@ -6,6 +6,8 @@ import { useReceipeStore } from "@/store/receipe-store";
 import { useKitchenStore } from "@/store/kitchen-store";
 import { useAuthStore } from "@/store/auth-store";
 import { scaledIngredient, mealLabels } from "@/domain/cooking";
+import { estimateCalories } from "@/domain/nutrition";
+import { estimateCaloriesAI } from "@/lib/cooking-ai";
 import {
   Action,
   Card,
@@ -35,6 +37,7 @@ export default function RecipeDetail() {
   const [rating, setRating] = useState("5");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const task = useTask();
+  const caloriesTask = useTask();
   useEffect(() => {
     if (!recipe) void fetchReceipes();
   }, [id]);
@@ -72,7 +75,46 @@ export default function RecipeDetail() {
           ? mealLabels[recipe.meal_type]
           : "Orice masă"}{" "}
         · {recipe.servings} porții în rețeta de bază
+        {recipe.calories != null
+          ? ` · ≈ ${recipe.calories} kcal/porție`
+          : ""}
       </Copy>
+      {recipe.calories == null && (
+        <Card>
+          <Text style={ui.label}>Caloriile nu sunt completate</Text>
+          <View style={ui.row}>
+            <Action
+              secondary
+              label="Calculează din ingrediente"
+              disabled={caloriesTask.busy}
+              onPress={() =>
+                caloriesTask.run(async () => {
+                  const e = estimateCalories(recipe);
+                  if (e.perServing == null)
+                    throw new Error(
+                      `Nu pot calcula pentru: ${e.unknown.join(", ")}. Folosește AI sau editează rețeta.`,
+                    );
+                  await updateReceipe(recipe.id, { calories: e.perServing });
+                  return `Salvat: ≈ ${e.perServing} kcal/porție.`;
+                })
+              }
+            />
+            <Action
+              secondary
+              label="Estimează cu AI ✨"
+              disabled={caloriesTask.busy}
+              onPress={() =>
+                caloriesTask.run(async () => {
+                  const r = await estimateCaloriesAI(recipe);
+                  await updateReceipe(recipe.id, { calories: r.calories });
+                  return `Salvat: ≈ ${r.calories} kcal/porție.${r.note ? " " + r.note : ""}`;
+                })
+              }
+            />
+          </View>
+          {caloriesTask.status}
+        </Card>
+      )}
       <View style={ui.row}>
         <Action
           secondary
@@ -102,6 +144,12 @@ export default function RecipeDetail() {
           value={servingsText}
           onChangeText={(v) => setServingsText(v.replace(/[^\d]/g, ""))}
         />
+        {recipe.calories != null && (
+          <Copy>
+            ≈ {recipe.calories * servings} kcal pentru {servings}{" "}
+            {servings === 1 ? "porție" : "porții"}
+          </Copy>
+        )}
         <Title>Ingrediente</Title>
         {recipe.ingredients.map((i) => (
           <Copy key={i.id}>

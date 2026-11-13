@@ -27,6 +27,15 @@ test("migration, RLS isolation, shared access, conflict protection and quotas", 
   );
   await db.exec(migration);
   await db.exec(migration); // also verify rerun safety
+  const calories = await readFile(
+    new URL(
+      "../supabase/migrations/202611140001_recipe_calories.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  await db.exec(calories);
+  await db.exec(calories); // rerun safety
   async function user(id, sql) {
     return db.transaction(async (tx) => {
       await tx.exec(
@@ -62,9 +71,20 @@ test("migration, RLS isolation, shared access, conflict protection and quotas", 
   );
   await user(
     A,
-    `insert into public.recipes(user_id,title,servings,time,steps) values('${A}','Private',2,20,'Cook')`,
+    `insert into public.recipes(user_id,title,servings,time,steps,calories) values('${A}','Private',2,20,'Cook',450)`,
   );
   assert.equal((await user(B, `select * from public.recipes`)).rows.length, 0);
+  await user(A, `update public.recipes set calories=520 where title='Private'`);
+  assert.equal(
+    (await user(A, `select calories from public.recipes where title='Private'`))
+      .rows[0].calories,
+    520,
+    "owner can edit calories",
+  );
+  await assert.rejects(
+    user(A, `update public.recipes set calories=99999 where title='Private'`),
+    /recipes_calories_range/,
+  );
   await assert.rejects(
     user(
       B,

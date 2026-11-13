@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth-store";
 import { useKitchenStore } from "@/store/kitchen-store";
 import { useReceipeStore } from "@/store/receipe-store";
+import { estimateCalories } from "@/domain/nutrition";
 import {
   Action,
   Card,
@@ -113,6 +114,42 @@ export default function Profile() {
               await useReceipeStore.getState().fetchReceipes();
               setCode("");
             }, "Sunteți conectați la aceeași bucătărie.")
+          }
+        />
+      </Card>
+      <Card>
+        <Text style={ui.label}>Calorii pentru rețetele existente</Text>
+        <Copy>
+          Calculează din ingrediente caloriile pentru toate rețetele care nu le
+          au încă. Nu folosește cereri AI. Pentru rețetele cu ingrediente
+          necunoscute, deschide rețeta și folosește „Estimează cu AI”.
+        </Copy>
+        <Action
+          secondary
+          label="Calculează caloriile lipsă"
+          disabled={task.busy}
+          onPress={() =>
+            task.run(async () => {
+              const store = useReceipeStore.getState();
+              const missing = store.receipes.filter((r) => r.calories == null);
+              if (!missing.length) return "Toate rețetele au deja calorii.";
+              const skipped: string[] = [];
+              let done = 0;
+              for (const r of missing) {
+                const e = estimateCalories(r);
+                if (e.perServing == null) skipped.push(r.title);
+                else {
+                  await store.updateReceipe(r.id, { calories: e.perServing });
+                  done++;
+                }
+              }
+              return (
+                `Calculat pentru ${done} ${done === 1 ? "rețetă" : "rețete"}.` +
+                (skipped.length
+                  ? ` Necesită AI sau editare: ${skipped.join(", ")}.`
+                  : "")
+              );
+            })
           }
         />
       </Card>
