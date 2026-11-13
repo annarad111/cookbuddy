@@ -103,7 +103,7 @@ export default function Planner() {
     <Page>
       <Title>What are we cooking?</Title>
       <Copy>
-        A simple plan for you both, with quantities and shopping calculated automatically.
+        A simple plan with quantities and shopping calculated automatically.
       </Copy>
       {!!error && <Copy>{error}</Copy>}
       <Action

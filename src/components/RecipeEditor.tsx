@@ -124,7 +124,7 @@ export default function RecipeEditor({
           onChange={(meal_type) => update({ meal_type })}
         />
       </Card>
-      <Title>Ingrediente</Title>
+      <Title>Ingredients</Title>
       <Copy>
         Quantities are for all servings of the recipe. Use a numeric quantity and a unit so they can be recalculated automatically.
       </Copy>
