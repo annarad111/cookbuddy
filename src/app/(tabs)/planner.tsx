@@ -24,6 +24,7 @@ import {
 } from "@/components/KitchenUI";
 import MealCard from "@/components/MealCard";
 import { dayCalories } from "@/domain/nutrition";
+import { confirmAction } from "@/lib/confirm";
 
 export default function Planner() {
   const { data, household, loading, error, commit, load } = useKitchenStore();
@@ -199,7 +200,34 @@ export default function Planner() {
           Set up the kitchen in Profile. Your existing recipes stay available.
         </Copy>
       )}
-      {data.plan.length > 0 && <Title>Your plan</Title>}
+      {data.plan.length > 0 && (
+        <>
+          <Title>Your plan</Title>
+          <Action
+            secondary
+            label="Clear plan"
+            disabled={task.busy || !household}
+            onPress={() =>
+              task.run(async () => {
+                const ok = await confirmAction(
+                  "Clear the plan?",
+                  "All planned meals and shopping checkmarks will be removed for both of you. Your recipes are not affected.",
+                  "Clear",
+                );
+                if (!ok) return;
+                await commit((s) => ({
+                  ...s,
+                  plan: [],
+                  checked: [],
+                  planCreatedAt: undefined,
+                }));
+                setManualEntry(null);
+                return "Plan cleared.";
+              })
+            }
+          />
+        </>
+      )}
       {data.plan.map((entry, index) => (
         <View key={entry.id} style={{ gap: 10 }}>
           {data.plan[index - 1]?.day !== entry.day && (

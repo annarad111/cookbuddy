@@ -1,5 +1,7 @@
 import { Text, Pressable } from "react-native";
 import { shareText } from "@/lib/share";
+import { confirmAction } from "@/lib/confirm";
+import { View } from "react-native";
 import { useKitchenStore } from "@/store/kitchen-store";
 import { shoppingList, formatQuantity } from "@/domain/cooking";
 import {
@@ -37,6 +39,43 @@ export default function Shopping() {
         <Card>
           <Copy>You already have every ingredient in the pantry.</Copy>
         </Card>
+      )}
+      {!!data.plan.length && (
+        <View style={ui.row}>
+          <Action
+            secondary
+            label="Uncheck all"
+            disabled={task.busy || !data.checked.length}
+            onPress={() =>
+              task.run(async () => {
+                await commit((s) => ({ ...s, checked: [] }));
+                return "All items unchecked.";
+              })
+            }
+          />
+          <Action
+            secondary
+            label="Clear list"
+            disabled={task.busy}
+            onPress={() =>
+              task.run(async () => {
+                const ok = await confirmAction(
+                  "Clear the shopping list?",
+                  "The list is built from your meal plan, so this also clears the plan for both of you. Your recipes and pantry are not affected.",
+                  "Clear",
+                );
+                if (!ok) return;
+                await commit((s) => ({
+                  ...s,
+                  plan: [],
+                  checked: [],
+                  planCreatedAt: undefined,
+                }));
+                return "Shopping list and plan cleared.";
+              })
+            }
+          />
+        </View>
       )}
       {list.map((i) => {
         const checked = data.checked.includes(i.key);

@@ -168,6 +168,11 @@ test(
             recipes.push(r);
             return reply(r, 201);
           }
+          if (req.method() === "DELETE") {
+            const id = new URL(req.url()).searchParams.get("id")?.replace("eq.", "");
+            recipes = recipes.filter((r) => r.id !== id);
+            return route.fulfill({ status: 204, body: "" });
+          }
           return reply(recipes);
         }
         if (path.endsWith("/functions/v1/cooking-ai"))
@@ -257,6 +262,13 @@ test(
         await page.getByRole("checkbox").first().innerText(),
         /4250 g/,
       );
+      // Reset the ticks: check one item, then "Uncheck all".
+      await page.getByRole("checkbox").first().click();
+      await page.waitForFunction(() => document.body.innerText.includes("☑"));
+      assert.equal(kitchen.checked.length, 1);
+      await page.getByRole("button", { name: "Uncheck all", exact: true }).click();
+      await page.getByText("All items unchecked.", { exact: true }).waitFor();
+      assert.equal(kitchen.checked.length, 0);
       await page.getByText("Recipes", { exact: true }).last().click();
       await page
         .getByRole("button", { name: "Import with AI ✨", exact: true })
@@ -294,6 +306,26 @@ test(
         await page.screenshot({
           path: resolve(process.env.SCREENSHOT_DIR, "planner-mobile.png"),
         });
+      // Destructive actions ask for confirmation (browser confirm on web).
+      const dialogs = [];
+      page.on("dialog", (d) => {
+        dialogs.push(d.message());
+        void d.accept();
+      });
+      await page.getByRole("button", { name: "Clear plan", exact: true }).click();
+      await page.getByText("Plan cleared.", { exact: true }).waitFor();
+      assert.equal(kitchen.plan.length, 0);
+      assert.equal(kitchen.checked.length, 0);
+      await page.getByText("Recipes", { exact: true }).last().click();
+      const before = recipes.length;
+      await page
+        .getByRole("button", { name: "Delete Recipe checked by Ana", exact: true })
+        .click();
+      await page
+        .getByText("Recipe checked by Ana", { exact: true })
+        .waitFor({ state: "detached" });
+      assert.equal(recipes.length, before - 1);
+      assert.equal(dialogs.length, 2, "both actions were confirmed first");
       assert.deepEqual(errors, [], "No runtime errors");
     } finally {
       await browser?.close();

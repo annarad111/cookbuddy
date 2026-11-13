@@ -9,6 +9,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipeStore, Receipe } from "@/store/receipe-store";
+import { confirmAction } from "@/lib/confirm";
 
 type Props = {
   data: Receipe[];
@@ -17,6 +18,21 @@ type Props = {
 
 export default function RecipeList({ data, emptyMessage }: Props) {
   const toggleFavorite = useReceipeStore((state) => state.toggleFavorite);
+  const removeReceipe = useReceipeStore((state) => state.removeReceipe);
+  async function remove(item: Receipe) {
+    const ok = await confirmAction(
+      "Delete recipe?",
+      `"${item.title}" will be removed from your collection. Meals already in the plan keep their own copy.`,
+    );
+    if (!ok) return;
+    try {
+      await removeReceipe(item.id);
+    } catch (e) {
+      useReceipeStore.setState({
+        error: e instanceof Error ? e.message : "Could not delete the recipe.",
+      });
+    }
+  }
 
   if (data.length === 0) {
     return (
@@ -80,16 +96,28 @@ export default function RecipeList({ data, emptyMessage }: Props) {
               </View>
             </View>
           </Pressable>
-          <Pressable
-            onPress={() => toggleFavorite(item.id)}
-            style={styles.favoriteButton}
-          >
-            <Ionicons
-              name={item.is_favorite ? "heart" : "heart-outline"}
-              size={22}
-              color="#FF8A65"
-            />
-          </Pressable>
+          <View style={styles.actions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={item.is_favorite ? "Remove from favorites" : "Add to favorites"}
+              onPress={() => toggleFavorite(item.id)}
+              style={styles.favoriteButton}
+            >
+              <Ionicons
+                name={item.is_favorite ? "heart" : "heart-outline"}
+                size={22}
+                color="#FF8A65"
+              />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${item.title}`}
+              onPress={() => void remove(item)}
+              style={styles.favoriteButton}
+            >
+              <Ionicons name="trash-outline" size={21} color="#A8635A" />
+            </Pressable>
+          </View>
         </View>
       )}
     />
@@ -105,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     width: "100%",
-    gap: 40,
+    gap: 16,
   },
   title: { fontSize: 18, fontWeight: "bold" },
   subtitle: { fontSize: 15, color: "#A8635A" },
@@ -121,4 +149,5 @@ const styles = StyleSheet.create({
   placeholderText: { fontSize: 24 },
   timeContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   favoriteButton: { padding: 8 },
+  actions: { alignItems: "center", gap: 4 },
 });
