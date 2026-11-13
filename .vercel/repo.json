@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_zpUzr9AlqH4iXd7XsL6DKESuLlVd",
+      "name": "cookbuddy",
+      "directory": "dist",
+      "orgId": "team_gaUWSN7TeqWhOeAsBOJfCeLa"
+    }
+  ]
+}
