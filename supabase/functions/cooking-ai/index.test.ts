@@ -19,6 +19,9 @@ Deno.test(
     let upstreamStatus = 200;
     let malformed = false;
     let requestCount = 0;
+    let schemaUnsupported = false;
+    let noRecipe = false;
+    const formats: string[] = [];
     const recipe = {
       title: "Orez cu legume",
       servings: 2,
@@ -55,14 +58,33 @@ Deno.test(
           body.model === "openrouter/free",
           "Must use only the free router",
         );
+        const format = body.response_format;
+        formats.push(
+          format.type === "json_schema" ? format.json_schema.name : format.type,
+        );
+        if (format.type === "json_schema") {
+          assert(format.json_schema.strict === true, "Strict schema");
+          assert(
+            body.provider?.require_parameters === true,
+            "Route only to endpoints supporting the schema",
+          );
+          if (schemaUnsupported)
+            return json({ error: "No endpoints found" }, 404);
+        }
         if (upstreamStatus !== 200)
           return json({ error: "upstream" }, upstreamStatus);
+        const importing = format.json_schema?.name === "cookbuddy_import";
+        const answer = importing
+          ? noRecipe
+            ? { recipe: null, error: "Nu e o rețetă." }
+            : { recipe, error: null }
+          : recipe;
         return json({
           choices: [
             {
               finish_reason: "stop",
               message: {
-                content: malformed ? "not json" : JSON.stringify(recipe),
+                content: malformed ? "not json" : JSON.stringify(answer),
               },
             },
           ],
@@ -108,6 +130,24 @@ Deno.test(
       assert(r.status === 200, "Valid free recommendation");
       const output = await r.json();
       assert(output.title === recipe.title, "Return recipe");
+      assert(formats.at(-1) === "cookbuddy_suggest", "Send recipe schema");
+      schemaUnsupported = true;
+      r = await handler(request(body));
+      assert(
+        r.status === 200 && formats.slice(-2).join() === "cookbuddy_suggest,json_object",
+        "Fall back to plain JSON when no endpoint supports the schema",
+      );
+      schemaUnsupported = false;
+      r = await handler(request({ action: "import", text: "Orez cu legume" }));
+      const imported = await r.json();
+      assert(
+        r.status === 200 && imported.title === recipe.title,
+        "Unwrap structured import to the bare recipe",
+      );
+      noRecipe = true;
+      r = await handler(request({ action: "import", text: "Salut" }));
+      assert(r.status === 422, "Explain when the material has no recipe");
+      noRecipe = false;
       r = await handler(
         request({
           ...body,
