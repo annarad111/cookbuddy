@@ -56,7 +56,7 @@ export default function ImportRecipe() {
     <Page>
       <Title>Add a recipe from text or a photo</Title>
       <Copy>
-        Paste a recipe or pick a photo of the ingredients and steps. The AI prepares it for your collection; you review it before saving.
+        Paste a recipe, a photo of one, or just a dish name or a photo of a dish. The AI transcribes the recipe, or writes a typical one for that dish; you review it before saving.
       </Copy>
       <Card>
         <Field

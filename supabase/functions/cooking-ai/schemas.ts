@@ -46,7 +46,7 @@ export const recipeSchema = {
     calories: {
       type: ["integer", "null"],
       description:
-        "Estimated kcal for ONE serving (not the whole recipe). For imports: only if stated in the material, otherwise null.",
+        "Estimated kcal for ONE serving (not the whole recipe). When transcribing an existing recipe: only if stated in it, otherwise null.",
     },
   },
   required: [
@@ -90,7 +90,7 @@ export const importSchema = {
     recipe: { anyOf: [recipeSchema, { type: "null" }] },
     error: {
       type: ["string", "null"],
-      description: "The reason, if the material contains no recipe; otherwise null.",
+      description: "The reason, only if the material is not about food at all; otherwise null.",
     },
   },
   required: ["recipe", "error"],
