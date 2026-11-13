@@ -1,0 +1,5 @@
+project_id = "cookbuddy"
+
+[functions.cooking-ai]
+# The handler explicitly verifies the user's JWT with auth.getUser().
+verify_jwt = false

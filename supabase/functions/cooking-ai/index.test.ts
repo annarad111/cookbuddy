@@ -1,0 +1,142 @@
+import { handler } from "./index.ts";
+function assert(condition: boolean, message: string) {
+  if (!condition) throw new Error(message);
+}
+Deno.test(
+  "AI handler: authentication, quota, free-only routing, validation and upstream failures",
+  async () => {
+    const original = globalThis.fetch;
+    const env = {
+      SUPABASE_URL: "https://mock.supabase.co",
+      SUPABASE_ANON_KEY: "public",
+      SUPABASE_SERVICE_ROLE_KEY: "server",
+      OPENROUTER_API_KEY: "test-key",
+      OPENROUTER_MODEL: "openrouter/free",
+    };
+    for (const [key, value] of Object.entries(env)) Deno.env.set(key, value);
+    let authenticated = true;
+    let allowed = true;
+    let upstreamStatus = 200;
+    let malformed = false;
+    let requestCount = 0;
+    const recipe = {
+      title: "Orez cu legume",
+      servings: 2,
+      time: 20,
+      meal_type: "dinner",
+      ingredients: [{ name: "Orez", quantity: 150, unit: "g" }],
+      steps: "Fierbe orezul.\nAdaugă legumele.",
+    };
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      const url = String(input instanceof Request ? input.url : input);
+      const json = (value: unknown, status = 200) =>
+        new Response(JSON.stringify(value), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      if (url.includes("/auth/v1/user"))
+        return authenticated
+          ? json({
+              id: "11111111-1111-4111-8111-111111111111",
+              email: "test@example.com",
+              aud: "authenticated",
+            })
+          : json({ message: "Invalid token" }, 401);
+      if (url.includes("/rpc/cookbuddy_consume_ai")) return json(allowed);
+      if (url.includes("/cookbuddy_profiles")) return json(null);
+      if (url.includes("/recipes")) return json([]);
+      if (url.includes("openrouter.ai")) {
+        requestCount++;
+        const body = JSON.parse(String(init?.body));
+        assert(
+          body.model === "openrouter/free",
+          "Must use only the free router",
+        );
+        if (upstreamStatus !== 200)
+          return json({ error: "upstream" }, upstreamStatus);
+        return json({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: {
+                content: malformed ? "not json" : JSON.stringify(recipe),
+              },
+            },
+          ],
+        });
+      }
+      throw new Error("Unexpected URL: " + url);
+    }) as typeof fetch;
+    const request = (body: unknown) =>
+      new Request("http://localhost/cooking-ai", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer test",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+    const body = {
+      action: "suggest",
+      meal: "dinner",
+      preferences: { people: 2, days: 1, maxMinutes: 30, excluded: "" },
+    };
+    try {
+      let r = await handler(
+        new Request("http://localhost", { method: "OPTIONS" }),
+      );
+      assert(r.status === 200, "CORS preflight");
+      authenticated = false;
+      r = await handler(request(body));
+      assert(r.status === 401, "Reject unauthenticated users");
+      authenticated = true;
+      allowed = false;
+      r = await handler(request(body));
+      assert(r.status === 429, "Enforce server quota");
+      allowed = true;
+      Deno.env.set("OPENROUTER_MODEL", "paid/model");
+      r = await handler(request(body));
+      assert(
+        r.status === 503 && requestCount === 0,
+        "Reject paid models before inference",
+      );
+      Deno.env.set("OPENROUTER_MODEL", "openrouter/free");
+      r = await handler(request(body));
+      assert(r.status === 200, "Valid free recommendation");
+      const output = await r.json();
+      assert(output.title === recipe.title, "Return recipe");
+      r = await handler(
+        request({
+          ...body,
+          preferences: { ...body.preferences, excluded: "orez" },
+        }),
+      );
+      assert(r.status === 422, "Reject excluded ingredients");
+      upstreamStatus = 429;
+      r = await handler(request(body));
+      assert(r.status === 429, "Explain provider free quota");
+      upstreamStatus = 200;
+      malformed = true;
+      r = await handler(request(body));
+      assert(r.status === 502, "Reject malformed AI JSON");
+      malformed = false;
+      r = await handler(
+        request({
+          action: "import",
+          text: "Recipe",
+          image: "data:image/svg+xml;base64,evil",
+        }),
+      );
+      assert(r.status === 400, "Reject unsupported image input");
+      Deno.env.delete("OPENROUTER_API_KEY");
+      r = await handler(request(body));
+      assert(r.status === 503, "Explain missing key");
+    } finally {
+      globalThis.fetch = original;
+      for (const key of Object.keys(env)) Deno.env.delete(key);
+    }
+  },
+);
