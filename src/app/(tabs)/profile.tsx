@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Text } from "react-native";
+import { Text, View } from "react-native";
+import { Image } from "expo-image";
 import { shareText } from "@/lib/share";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth-store";
@@ -23,8 +24,46 @@ export default function Profile() {
   const task = useTask();
   return (
     <Page>
+      {/* Everyone gets the CookBuddy bunny as their profile picture. */}
+      <View style={{ alignItems: "center", gap: 12, paddingVertical: 6 }}>
+        <View
+          style={{
+            width: 150,
+            height: 150,
+            borderRadius: 75,
+            backgroundColor: "#fff",
+            borderWidth: 4,
+            borderColor: "#f3d3c6",
+            overflow: "hidden",
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: "#563b30",
+            shadowOpacity: 0.12,
+            shadowRadius: 14,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 4,
+          }}
+        >
+          <Image
+            source={require("../../../assets/images/avatar-bunny.png")}
+            style={{ width: 96, height: 145, marginTop: 14 }}
+            contentFit="contain"
+            accessibilityLabel="Profile picture"
+          />
+        </View>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "700",
+            color: "#563b30",
+            textAlign: "center",
+          }}
+          selectable
+        >
+          {session?.user.email}
+        </Text>
+      </View>
       <Title>Your kitchen</Title>
-      <Copy>{session?.user.email}</Copy>
       <Action
         secondary
         label="Load / refresh kitchen"
