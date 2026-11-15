@@ -44,6 +44,7 @@ Fă un backup al bazei de date existente înaintea migrării.
 3. Copiază tot conținutul în SQL Editor și rulează-l.
 4. La fel, rulează apoi `supabase/migrations/202611140001_recipe_calories.sql` (adaugă coloana `calories`). Până o rulezi, rețetele se salvează în continuare, dar fără calorii.
 5. Rulează și `supabase/migrations/202611150001_english_kitchen_name.sql`: numele implicit al bucătăriei devine „Our kitchen” (aplicația este acum în engleză).
+6. Rulează și `supabase/migrations/202611160001_ai_remaining.sql`: aplicația afișează câte cereri AI mai ai azi („✨ 14 of 20 AI requests left today”).
 
 Migrarea păstrează rețetele existente, adaugă `household_id` și `meal_type` și creează tabelele pentru bucătării, membri, stare comună și limite AI. Poate fi rulată din nou.
 

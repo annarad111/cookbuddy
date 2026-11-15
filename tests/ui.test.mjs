@@ -306,13 +306,11 @@ test(
         await page.screenshot({
           path: resolve(process.env.SCREENSHOT_DIR, "planner-mobile.png"),
         });
-      // Destructive actions ask for confirmation (browser confirm on web).
-      const dialogs = [];
-      page.on("dialog", (d) => {
-        dialogs.push(d.message());
-        void d.accept();
-      });
+      // Destructive actions ask for confirmation in the app's own pop-up.
       await page.getByRole("button", { name: "Clear plan", exact: true }).click();
+      await page.getByText("Clear the plan?", { exact: true }).waitFor();
+      assert.equal(kitchen.plan.length, 9, "nothing changes before confirming");
+      await page.getByRole("button", { name: "Clear", exact: true }).click();
       await page.getByText("Plan cleared.", { exact: true }).waitFor();
       assert.equal(kitchen.plan.length, 0);
       assert.equal(kitchen.checked.length, 0);
@@ -321,11 +319,12 @@ test(
       await page
         .getByRole("button", { name: "Delete Recipe checked by Ana", exact: true })
         .click();
+      await page.getByText("Delete recipe?", { exact: true }).waitFor();
+      await page.getByRole("button", { name: "Delete", exact: true }).click();
       await page
         .getByText("Recipe checked by Ana", { exact: true })
         .waitFor({ state: "detached" });
       assert.equal(recipes.length, before - 1);
-      assert.equal(dialogs.length, 2, "both actions were confirmed first");
       assert.deepEqual(errors, [], "No runtime errors");
     } finally {
       await browser?.close();

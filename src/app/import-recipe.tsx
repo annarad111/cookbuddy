@@ -16,6 +16,7 @@ import {
   useTask,
 } from "@/components/KitchenUI";
 import RecipeEditor from "@/components/RecipeEditor";
+import AiQuota from "@/components/AiQuota";
 export default function ImportRecipe() {
   const [text, setText] = useState("");
   const [image, setImage] = useState("");
@@ -87,6 +88,7 @@ export default function ImportRecipe() {
         <Copy>
           The text or photo is sent to OpenRouter for processing. Photo import depends on a free model with image support being available.
         </Copy>
+        <AiQuota />
         <Action
           label="Prepare recipe with AI ✨"
           disabled={task.busy || (!text.trim() && !image)}

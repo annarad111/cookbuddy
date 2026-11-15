@@ -118,14 +118,31 @@ export async function handler(req: Request): Promise<Response> {
         },
         503,
       );
-    if (!allowed)
-      return response(
-        {
-          error:
-            "You reached the app limit (20 AI requests/day) or sent requests too quickly. Wait a few seconds or come back tomorrow.",
-        },
-        429,
-      );
+    if (!allowed) {
+      // Tell the app whether today's 20 are used up (pop-up) or it was just too fast.
+      const { data: usage } = await admin
+        .from("cookbuddy_ai_usage")
+        .select("count")
+        .eq("user_id", user.id)
+        .eq("day", new Date().toISOString().slice(0, 10))
+        .maybeSingle();
+      return (usage?.count ?? 0) >= 20
+        ? response(
+            {
+              code: "AI_LIMIT",
+              error:
+                "You've used all 20 AI requests for today. They reset at midnight (UTC).",
+            },
+            429,
+          )
+        : response(
+            {
+              code: "TOO_FAST",
+              error: "Please wait a few seconds between AI requests.",
+            },
+            429,
+          );
+    }
     const input = body.preferences || {};
     const p: Preferences = {
       people: integer(input.people, 1, 12),

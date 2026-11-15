@@ -76,6 +76,7 @@ export default function HomeScreen() {
       </View>
       <RecipeList
         data={filtered}
+        loading={loading && !receipes.length}
         emptyMessage={
           loading
             ? "Loading recipes…"

@@ -10,13 +10,15 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipeStore, Receipe } from "@/store/receipe-store";
 import { confirmAction } from "@/lib/confirm";
+import Bunny, { BunnyLoader } from "./Bunny";
 
 type Props = {
   data: Receipe[];
   emptyMessage: string;
+  loading?: boolean;
 };
 
-export default function RecipeList({ data, emptyMessage }: Props) {
+export default function RecipeList({ data, emptyMessage, loading }: Props) {
   const toggleFavorite = useReceipeStore((state) => state.toggleFavorite);
   const removeReceipe = useReceipeStore((state) => state.removeReceipe);
   async function remove(item: Receipe) {
@@ -37,12 +39,7 @@ export default function RecipeList({ data, emptyMessage }: Props) {
   if (data.length === 0) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <View >
-          <Image
-          style={{width: 200, height:180, resizeMode: 'contain'}}
-            source={require("../../assets/images/5.png")}
-          />
-        </View>
+        {loading ? <BunnyLoader size={150} /> : <Bunny mood="idle" size={170} />}
         <Text style={{textAlign:'center', fontSize: 18, fontFamily: "Baloo2_700Bold"}}>{emptyMessage}</Text>
       </View>
     );

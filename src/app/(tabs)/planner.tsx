@@ -25,6 +25,7 @@ import {
 import MealCard from "@/components/MealCard";
 import { dayCalories } from "@/domain/nutrition";
 import { confirmAction } from "@/lib/confirm";
+import AiQuota from "@/components/AiQuota";
 
 export default function Planner() {
   const { data, household, loading, error, commit, load } = useKitchenStore();
@@ -180,6 +181,7 @@ export default function Planner() {
             Generating a new plan replaces the current one and clears the shopping checkmarks.
           </Copy>
         )}
+        <AiQuota />
         <Action
           label="Suggest a plan with AI ✨"
           disabled={task.busy || !household}

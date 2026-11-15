@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  Alert,
   DimensionValue,
   Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { showDialog } from "@/store/overlay-store";
 
 type Props = {
   image: string;
@@ -26,10 +26,11 @@ export default function ImagePickerInput({ image, onChange, width = '85%' }: Pro
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert(
-        "Permission needed",
-        "Please allow access to your photo library.",
-      );
+      void showDialog({
+        title: "Permission needed",
+        message: "Please allow access to your photo library in your phone settings.",
+        buttons: [{ label: "OK", value: "ok", primary: true }],
+      });
       return;
     }
 

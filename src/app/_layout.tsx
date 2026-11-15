@@ -16,6 +16,9 @@ import { useKitchenStore } from "@/store/kitchen-store";
 import { useReceipeStore } from "@/store/receipe-store";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth-store";
+import { View } from "react-native";
+import { BunnyLoader } from "@/components/Bunny";
+import Overlay from "@/components/Overlay";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -87,12 +90,24 @@ export default function RootLayout() {
   }, [householdId]);
 
   if (!fontsLoaded || loading) {
-    return null;
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#fff6ef",
+        }}
+      >
+        <BunnyLoader size={150} />
+      </View>
+    );
   }
 
   const hasEntered = !!session;
 
   return (
+    <>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!hasEntered}>
         <Stack.Screen name="welcome" />
@@ -111,6 +126,7 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen name="receipe/[id]" />
+        <Stack.Screen name="cook/[id]" options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen
           name="new-receipe"
           options={{
@@ -121,5 +137,7 @@ export default function RootLayout() {
         />
       </Stack.Protected>
     </Stack>
+    <Overlay />
+    </>
   );
 }

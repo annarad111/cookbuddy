@@ -272,3 +272,22 @@ test("units are metric: spoons, cups, oz and lb convert to g/ml; older Romanian 
   assert.deepEqual(e.unknown, []);
   assert.equal(e.perServing, 620);
 });
+
+test("cooking timers are read from step text; ingredients get a supermarket aisle", async () => {
+  const { stepTimerSeconds, formatClock } = await import("../src/domain/timers.ts");
+  const { aisleFor } = await import("../src/domain/nutrition.ts");
+  assert.equal(stepTimerSeconds("Bake for 20 minutes until golden."), 1200);
+  assert.equal(stepTimerSeconds("Simmer 8-10 min, stirring."), 600, "ranges use the upper value");
+  assert.equal(stepTimerSeconds("Roast for 1.5 hours"), 5400);
+  assert.equal(stepTimerSeconds("Rest 30 seconds"), 30);
+  assert.equal(stepTimerSeconds("Preheat the oven to 200°C."), null);
+  assert.equal(stepTimerSeconds("Add 2 eggs"), null);
+  assert.equal(formatClock(125), "2:05");
+  assert.equal(formatClock(3725), "1:02:05");
+  assert.equal(aisleFor("Fresh tomatoes"), "Fruit & vegetables");
+  assert.equal(aisleFor("Chicken breast"), "Meat & fish");
+  assert.equal(aisleFor("Eggs"), "Dairy & eggs");
+  assert.equal(aisleFor("Black pepper"), "Spices & basics");
+  assert.equal(aisleFor("Wholemeal bread"), "Bakery");
+  assert.equal(aisleFor("Dragon fruit jam"), "Other");
+});

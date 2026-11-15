@@ -127,6 +127,15 @@ export default function RecipeDetail() {
           }
         />
         <Action
+          label="Start cooking 👩‍🍳"
+          onPress={() =>
+            router.push({
+              pathname: "/cook/[id]",
+              params: { id: recipe.id, servings: String(servings) },
+            })
+          }
+        />
+        <Action
           secondary
           label="Edit recipe"
           onPress={() =>

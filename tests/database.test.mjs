@@ -45,6 +45,14 @@ test("migration, RLS isolation, shared access, conflict protection and quotas", 
   );
   await db.exec(kitchenName);
   await db.exec(kitchenName); // rerun safety
+  const aiRemaining = await readFile(
+    new URL("../supabase/migrations/202611160001_ai_remaining.sql", import.meta.url),
+    "utf8",
+  );
+  await db.exec(aiRemaining);
+  await db.exec(aiRemaining); // rerun safety
+  const remaining = async (id) =>
+    (await user(id, "select public.cookbuddy_ai_remaining() as n")).rows[0].n;
   async function user(id, sql) {
     return db.transaction(async (tx) => {
       await tx.exec(
@@ -153,11 +161,14 @@ test("migration, RLS isolation, shared access, conflict protection and quotas", 
     user(A, `select public.cookbuddy_consume_ai('${A}')`),
     /permission denied/,
   );
+  assert.equal(await remaining(A), 20, "nothing used yet");
   assert.equal(
     (await db.query(`select public.cookbuddy_consume_ai('${A}') as allowed`))
       .rows[0].allowed,
     true,
   );
+  assert.equal(await remaining(A), 19);
+  assert.equal(await remaining(B), 20, "each account has its own count");
   assert.equal(
     (await db.query(`select public.cookbuddy_consume_ai('${A}') as allowed`))
       .rows[0].allowed,
@@ -166,6 +177,7 @@ test("migration, RLS isolation, shared access, conflict protection and quotas", 
   await db.exec(
     `update public.cookbuddy_ai_usage set count=20,last_request=now()-interval '1 minute'`,
   );
+  assert.equal(await remaining(A), 0);
   assert.equal(
     (await db.query(`select public.cookbuddy_consume_ai('${A}') as allowed`))
       .rows[0].allowed,

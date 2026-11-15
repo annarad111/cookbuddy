@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { BunnyLoader } from "./Bunny";
+import { notify } from "@/store/overlay-store";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -123,7 +124,8 @@ export function useTask() {
     setMessage("");
     try {
       const result = await task();
-      setMessage(result || success);
+      // Success shows as a short toast; errors stay on screen next to the action.
+      notify(result || success);
     } catch (e) {
       setMessage(
         e instanceof Error ? e.message : "Something went wrong. Please try again.",
@@ -138,7 +140,7 @@ export function useTask() {
     run,
     status: (
       <View accessibilityLiveRegion="polite">
-        {busy && <ActivityIndicator color="#b56443" />}
+        {busy && <BunnyLoader size={72} />}
         {!!message && <Text style={ui.message}>{message}</Text>}
       </View>
     ),

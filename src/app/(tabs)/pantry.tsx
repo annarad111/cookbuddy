@@ -24,6 +24,7 @@ import {
   useTask,
 } from "@/components/KitchenUI";
 import MealCard from "@/components/MealCard";
+import AiQuota from "@/components/AiQuota";
 export default function Pantry() {
   const { data, household, commit } = useKitchenStore();
   const { receipes, addReceipe } = useReceipeStore();
@@ -117,6 +118,7 @@ export default function Pantry() {
           }))}
           onChange={setMeal}
         />
+        <AiQuota />
         <Action
           label="Suggest a recipe ✨"
           disabled={task.busy || !household || !data.pantry.length}

@@ -1,5 +1,26 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { Text, View } from "react-native";
+
+// Logo + screen name in the top bar of every tab.
+function HeaderTitle({ children }: { children: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <Image
+        source={require("../../../assets/images/logo-small.png")}
+        style={{ width: 40, height: 40 }}
+        contentFit="contain"
+        accessibilityLabel="CookBuddy"
+      />
+      <Text
+        style={{ color: "#563b30", fontFamily: "Baloo2_700Bold", fontSize: 20 }}
+      >
+        {children}
+      </Text>
+    </View>
+  );
+}
 export default function Layout() {
   return (
     <Tabs
@@ -9,6 +30,8 @@ export default function Layout() {
         tabBarStyle: { backgroundColor: "#fffaf6" },
         headerStyle: { backgroundColor: "#fff6ef" },
         headerTitleStyle: { color: "#563b30", fontFamily: "Baloo2_700Bold" },
+        headerTitle: ({ children }) => <HeaderTitle>{children}</HeaderTitle>,
+        headerTitleAlign: "left",
       }}
     >
       <Tabs.Screen

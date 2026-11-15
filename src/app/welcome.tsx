@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import Bunny from "@/components/Bunny";
 
 export default function WelcomeScreen() {
   return (
@@ -11,11 +12,7 @@ export default function WelcomeScreen() {
         style={{ width: 400, height: 200 }}
         contentFit="contain"
       />
-      <Image
-        source={require("../../assets/animations/bunny.gif")}
-        style={{ width: 400, height: 300, marginBlockStart: 150 }}
-        contentFit="contain"
-      />
+      <Bunny mood="hello" size={300} />
       <View style={{gap: 6, marginBottom: 60}}>
         <Pressable
           style={({ pressed }) => [

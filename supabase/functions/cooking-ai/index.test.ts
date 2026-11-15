@@ -16,6 +16,7 @@ Deno.test(
     for (const [key, value] of Object.entries(env)) Deno.env.set(key, value);
     let authenticated = true;
     let allowed = true;
+    let usedToday = 0;
     let upstreamStatus = 200;
     let malformed = false;
     let requestCount = 0;
@@ -50,6 +51,7 @@ Deno.test(
             })
           : json({ message: "Invalid token" }, 401);
       if (url.includes("/rpc/cookbuddy_consume_ai")) return json(allowed);
+      if (url.includes("/cookbuddy_ai_usage")) return json({ count: usedToday });
       if (url.includes("/cookbuddy_profiles")) return json(null);
       if (url.includes("/recipes")) return json([]);
       if (url.includes("openrouter.ai")) {
@@ -119,8 +121,18 @@ Deno.test(
       assert(r.status === 401, "Reject unauthenticated users");
       authenticated = true;
       allowed = false;
+      usedToday = 20;
       r = await handler(request(body));
-      assert(r.status === 429, "Enforce server quota");
+      assert(
+        r.status === 429 && (await r.json()).code === "AI_LIMIT",
+        "Daily limit is reported with its own code",
+      );
+      usedToday = 3;
+      r = await handler(request(body));
+      assert(
+        r.status === 429 && (await r.json()).code === "TOO_FAST",
+        "Requests too close together are reported separately",
+      );
       allowed = true;
       Deno.env.set("OPENROUTER_MODEL", "paid/model");
       r = await handler(request(body));

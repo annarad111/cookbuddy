@@ -1,4 +1,7 @@
+import { create } from "zustand";
+import { router } from "expo-router";
 import { supabase } from "./supabase";
+import { showDialog } from "@/store/overlay-store";
 import {
   Feedback,
   PantryItem,
@@ -16,7 +19,37 @@ export type AIContext = {
   pantry: PantryItem[];
   feedback: Feedback[];
 };
+/** AI requests left today for this account (null until known). */
+export const useAiQuota = create<{ remaining: number | null }>(() => ({
+  remaining: null,
+}));
+export async function refreshAiQuota() {
+  const { data, error } = await supabase.rpc("cookbuddy_ai_remaining");
+  // Missing migration: keep the counter hidden rather than showing a wrong number.
+  useAiQuota.setState({ remaining: error || typeof data !== "number" ? null : data });
+}
+async function showLimitReached() {
+  useAiQuota.setState({ remaining: 0 });
+  const choice = await showDialog({
+    title: "Out of AI ideas for today",
+    message:
+      "You've used all 20 AI requests for today. They come back tomorrow. Until then you can still plan from your saved recipes, without AI.",
+    mood: "idle",
+    buttons: [
+      { label: "OK", value: "ok" },
+      { label: "Plan without AI", value: "plan", primary: true },
+    ],
+  });
+  if (choice === "plan") router.navigate("/planner");
+}
 async function invoke(payload: object): Promise<unknown> {
+  try {
+    return await callFunction(payload);
+  } finally {
+    void refreshAiQuota().catch(() => {});
+  }
+}
+async function callFunction(payload: object): Promise<unknown> {
   const { data, error } = await supabase.functions.invoke("cooking-ai", {
     body: payload,
   });
@@ -31,11 +64,16 @@ async function invoke(payload: object): Promise<unknown> {
       "AI is not available. You can use your saved recipes or try again later.";
     try {
       const response = await error.context?.json();
+      if (response?.code === "AI_LIMIT") {
+        void showLimitReached();
+        throw new Error("Daily AI limit reached. Try again tomorrow.");
+      }
       if (response?.error) message = response.error;
       else if (error.context?.status === 404)
         message =
           "The \"cooking-ai\" function is not deployed in Supabase. See step 3 in START_HERE_RO.md.";
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith("Daily AI limit")) throw e;
       /* No JSON body in the response. */
     }
     throw new Error(message);
