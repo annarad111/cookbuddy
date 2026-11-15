@@ -1,4 +1,6 @@
-import { Platform, Share } from "react-native";
+import { Linking, Platform, Share } from "react-native";
+import { formatRecipeText, type Recipe } from "@/domain/cooking";
+import { notify, showDialog } from "@/store/overlay-store";
 
 /**
  * Shares text with the system sheet. On web browsers without the Web Share API
@@ -24,4 +26,31 @@ export async function shareText(message: string): Promise<string> {
   }
   await Share.share({ message });
   return "";
+}
+
+/**
+ * Lets the user pick how to share a recipe: straight to WhatsApp, or the
+ * device share sheet (copy to clipboard on desktop browsers).
+ */
+export async function shareRecipe(recipe: Recipe, servings?: number) {
+  const text = formatRecipeText(recipe, servings);
+  const choice = await showDialog({
+    title: `Share "${recipe.title}"`,
+    message: "Send the recipe with its ingredients and steps.",
+    mood: "hello",
+    buttons: [
+      { label: "WhatsApp", value: "whatsapp", primary: true },
+      {
+        label: Platform.OS === "web" ? "Other apps / copy" : "Other apps",
+        value: "other",
+      },
+    ],
+  });
+  try {
+    if (choice === "whatsapp")
+      await Linking.openURL(`https://wa.me/?text=${encodeURIComponent(text)}`);
+    else if (choice === "other") notify(await shareText(text));
+  } catch {
+    notify("Couldn't open sharing on this device.", "idle");
+  }
 }

@@ -291,3 +291,43 @@ test("cooking timers are read from step text; ingredients get a supermarket aisl
   assert.equal(aisleFor("Wholemeal bread"), "Bakery");
   assert.equal(aisleFor("Dragon fruit jam"), "Other");
 });
+
+test("recipes share as clear WhatsApp-style text, scaled to the chosen servings", async () => {
+  const { formatRecipeText } = await import("../src/domain/cooking.ts");
+  const text = formatRecipeText(
+    {
+      id: "r",
+      title: "Spaghetti bolognese",
+      servings: 2,
+      time: 40,
+      calories: 640,
+      ingredients: [
+        ingredient("Spaghetti", 200, "g"),
+        { id: "p", name: "Black pepper", quantity: null, unit: "", amount: "to taste" },
+      ],
+      steps: "1. Brown the beef.\nSimmer the sauce.\n\n",
+      notes: "Better the next day.",
+    },
+    4,
+  );
+  assert.equal(
+    text,
+    [
+      "🍽️ *Spaghetti bolognese*",
+      "⏱ 40 min · 👥 4 servings · 🔥 ~640 kcal/serving",
+      "",
+      "🛒 *Ingredients*",
+      "• Spaghetti — 400 g",
+      "• Black pepper — to taste",
+      "",
+      "👩‍🍳 *Method*",
+      "1. Brown the beef.",
+      "2. Simmer the sauce.",
+      "",
+      "📝 *Notes*",
+      "Better the next day.",
+      "",
+      "_Shared from CookBuddy_ 🐰🥕",
+    ].join("\n"),
+  );
+});

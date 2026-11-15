@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipeStore, Receipe } from "@/store/receipe-store";
 import { confirmAction } from "@/lib/confirm";
+import { shareRecipe } from "@/lib/share";
 import Bunny, { BunnyLoader } from "./Bunny";
 
 type Props = {
@@ -108,6 +109,14 @@ export default function RecipeList({ data, emptyMessage, loading }: Props) {
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={`Share ${item.title}`}
+              onPress={() => void shareRecipe(item)}
+              style={styles.favoriteButton}
+            >
+              <Ionicons name="share-social-outline" size={21} color="#A8635A" />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
               accessibilityLabel={`Delete ${item.title}`}
               onPress={() => void remove(item)}
               style={styles.favoriteButton}
@@ -146,5 +155,5 @@ const styles = StyleSheet.create({
   placeholderText: { fontSize: 24 },
   timeContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   favoriteButton: { padding: 8 },
-  actions: { alignItems: "center", gap: 4 },
+  actions: { alignItems: "center", gap: 0 },
 });

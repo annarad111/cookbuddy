@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { scaledIngredient, mealLabels } from "@/domain/cooking";
 import { estimateCalories } from "@/domain/nutrition";
 import { estimateCaloriesAI } from "@/lib/cooking-ai";
+import { shareRecipe } from "@/lib/share";
 import {
   Action,
   Card,
@@ -134,6 +135,11 @@ export default function RecipeDetail() {
               params: { id: recipe.id, servings: String(servings) },
             })
           }
+        />
+        <Action
+          secondary
+          label="Share 📤"
+          onPress={() => void shareRecipe(recipe, servings)}
         />
         <Action
           secondary

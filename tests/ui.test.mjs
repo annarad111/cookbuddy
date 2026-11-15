@@ -325,6 +325,25 @@ test(
         .getByText("Recipe checked by Ana", { exact: true })
         .waitFor({ state: "detached" });
       assert.equal(recipes.length, before - 1);
+      // Share a recipe straight to WhatsApp (window.open is stubbed: no real request).
+      await page.evaluate(() => {
+        window.__opened = [];
+        window.open = (url) => {
+          window.__opened.push(String(url));
+          return null;
+        };
+      });
+      await page
+        .getByRole("button", { name: "Share Protein pancakes", exact: true })
+        .click();
+      await page.getByText('Share "Protein pancakes"', { exact: true }).waitFor();
+      await page.getByRole("button", { name: "WhatsApp", exact: true }).click();
+      await page.waitForFunction(() => window.__opened.length === 1);
+      const opened = await page.evaluate(() => window.__opened[0]);
+      assert.match(opened, /^https:\/\/wa\.me\/\?text=/);
+      const shared = decodeURIComponent(opened.split("text=")[1]);
+      assert.match(shared, /\*Protein pancakes\*/);
+      assert.match(shared, /🛒 \*Ingredients\*\n• Chicken breast — 500 g/);
       assert.deepEqual(errors, [], "No runtime errors");
     } finally {
       await browser?.close();

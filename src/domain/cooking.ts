@@ -437,3 +437,44 @@ export function validatePlan(value: unknown, p: Preferences): PlanEntry[] {
     return { id: key, day, meal, servings: p.people, recipe };
   });
 }
+
+/**
+ * A recipe as plain text that reads well in WhatsApp and other chat apps:
+ * *bold* headings, emoji, bullet ingredients and numbered steps.
+ */
+export function formatRecipeText(recipe: Recipe, servings = recipe.servings): string {
+  const portions = servings > 0 ? servings : recipe.servings;
+  const facts = [
+    `⏱ ${recipe.time} min`,
+    `👥 ${portions} ${portions === 1 ? "serving" : "servings"}`,
+    recipe.calories != null ? `🔥 ~${recipe.calories} kcal/serving` : "",
+  ].filter(Boolean);
+  const ingredients = recipe.ingredients
+    .filter((i) => i.name.trim())
+    .map((i) => {
+      const q = ingredientQuantity(i);
+      const amount =
+        q && recipe.servings > 0
+          ? formatQuantity((q.quantity * portions) / recipe.servings, q.unit)
+          : i.amount || "to taste";
+      return `• ${i.name.trim()} — ${amount}`;
+    });
+  const steps = recipe.steps
+    .split("\n")
+    .map((s) => s.replace(/^\s*\d+[.)]\s*/, "").trim())
+    .filter(Boolean)
+    .map((s, n) => `${n + 1}. ${s}`);
+  return [
+    `🍽️ *${recipe.title.trim()}*`,
+    facts.join(" · "),
+    "",
+    "🛒 *Ingredients*",
+    ...ingredients,
+    "",
+    "👩‍🍳 *Method*",
+    ...steps,
+    ...(recipe.notes?.trim() ? ["", "📝 *Notes*", recipe.notes.trim()] : []),
+    "",
+    "_Shared from CookBuddy_ 🐰🥕",
+  ].join("\n");
+}
