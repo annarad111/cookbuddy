@@ -12,6 +12,7 @@ import {
   Meal,
   excludedRecipe,
   normalize,
+  recipeMealType,
 } from "@/domain/cooking";
 export type AIContext = {
   preferences: Preferences;
@@ -94,7 +95,7 @@ export async function generatePlan(context: AIContext) {
         ? context.recipes.find(
             (r) =>
               normalize(r.title) === normalize(entry.recipe.title) &&
-              (r.meal_type === entry.meal || r.meal_type === "any") &&
+              (recipeMealType(r) === entry.meal || recipeMealType(r) === "any") &&
               r.time <= context.preferences.maxMinutes &&
               !excludedRecipe(r, context.preferences.excluded),
           )

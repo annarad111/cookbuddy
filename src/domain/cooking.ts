@@ -320,20 +320,62 @@ export function excludedRecipe(recipe: Recipe, excluded: string): boolean {
       recipe.ingredients.some((i) => normalize(i.name).includes(term)),
   );
 }
+/** Meal type as stored, made tolerant of case/spacing; missing means "any". */
+export function recipeMealType(r: Recipe): Meal | "any" {
+  const t = (r.meal_type ?? "").toString().trim().toLowerCase();
+  return (MEALS as readonly string[]).includes(t) ? (t as Meal) : "any";
+}
+/**
+ * Saved recipes for one meal slot, split by why they may not fit:
+ * `fits` respects time and exclusions, `tooLong` only exceeds the time limit.
+ */
+export function recipesForMeal(
+  recipes: Recipe[],
+  meal: Meal,
+  p: Pick<Preferences, "maxMinutes" | "excluded">,
+): { fits: Recipe[]; tooLong: Recipe[]; excluded: Recipe[] } {
+  const forMeal = recipes.filter((r) => {
+    const t = recipeMealType(r);
+    return t === meal || t === "any";
+  });
+  const excluded = forMeal.filter((r) => excludedRecipe(r, p.excluded));
+  const allowed = forMeal.filter((r) => !excludedRecipe(r, p.excluded));
+  return {
+    fits: allowed.filter((r) => !(r.time > p.maxMinutes)),
+    tooLong: allowed.filter((r) => r.time > p.maxMinutes),
+    excluded,
+  };
+}
+/** Explains, in plain words, why no saved recipe could be used for a meal. */
+export function noRecipeReason(
+  meal: Meal,
+  split: { tooLong: Recipe[]; excluded: Recipe[] },
+  maxMinutes: number,
+): string {
+  const label = mealLabels[meal].toLowerCase();
+  const parts: string[] = [];
+  if (split.tooLong.length) {
+    const times = [...new Set(split.tooLong.map((r) => r.time))].sort((a, b) => a - b);
+    parts.push(
+      `${split.tooLong.length} take longer than your ${maxMinutes} min limit (${times.slice(0, 4).join(", ")} min). Raise "Max time per recipe" to at least ${times[0]} min`,
+    );
+  }
+  if (split.excluded.length)
+    parts.push(
+      `${split.excluded.length} contain an excluded ingredient`,
+    );
+  if (!parts.length)
+    return `No ${label} recipes yet. Set a recipe's meal type to ${mealLabels[meal]} (or "Any meal"), or use AI.`;
+  const total = split.tooLong.length + split.excluded.length;
+  return `You have ${total} ${label} ${total === 1 ? "recipe" : "recipes"}, but ${parts.join(", and ")}.`;
+}
 export function localPlan(recipes: Recipe[], p: Preferences): PlanEntry[] {
   const result: PlanEntry[] = [];
   for (let day = 1; day <= p.days; day++)
     for (const meal of MEALS) {
-      const options = recipes.filter(
-        (r) =>
-          (r.meal_type === meal || r.meal_type === "any") &&
-          r.time <= p.maxMinutes &&
-          !excludedRecipe(r, p.excluded),
-      );
-      if (!options.length)
-        throw new Error(
-          `No eligible recipes for ${mealLabels[meal].toLowerCase()}. Set the meal type of your recipes or use AI.`,
-        );
+      const split = recipesForMeal(recipes, meal, p);
+      const options = split.fits;
+      if (!options.length) throw new Error(noRecipeReason(meal, split, p.maxMinutes));
       const recipe = options[(p.repeatMeals ? 0 : day - 1) % options.length];
       result.push({
         id: `${day}-${meal}`,

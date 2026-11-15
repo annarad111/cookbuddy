@@ -137,11 +137,11 @@ test("local planning respects category, time, exclusions, repeats and all day sl
   assert.equal(plan[3].recipe.id, "breakfast2");
   assert.throws(
     () => localPlan(recipes, { ...p, excluded: "orez, cartofi" }),
-    /No eligible recipes/,
+    /contain an excluded ingredient/,
   );
   assert.throws(
     () => localPlan(recipes, { ...p, maxMinutes: 10 }),
-    /No eligible recipes/,
+    /take longer than your 10 min limit/,
   );
   assert.equal(
     excludedRecipe(recipe("A", [ingredient("Pește", 100, "g")]), "peste"),
@@ -330,4 +330,25 @@ test("recipes share as clear WhatsApp-style text, scaled to the chosen servings"
       "_Shared from CookBuddy_ 🐰🥕",
     ].join("\n"),
   );
+});
+
+test("dinner recipes that take longer than the time limit are explained, and still pickable by hand", async () => {
+  const { recipesForMeal, noRecipeReason, recipeMealType } = await import("../src/domain/cooking.ts");
+  const quick = (id, meal) => ({ ...recipe(id, [ingredient("Rice", 100, "g")], meal), time: 20 });
+  const slow = (id, time) => ({ ...recipe(id, [ingredient("Beef", 300, "g")], "dinner"), time });
+  const recipes = [quick("Oats", "breakfast"), quick("Salad", "lunch"), slow("Stew", 90), slow("Lasagne", 60)];
+  const p = { ...defaultKitchen().preferences, maxMinutes: 40, source: "saved" };
+  assert.throws(
+    () => localPlan(recipes, p),
+    /You have 2 dinner recipes, but 2 take longer than your 40 min limit \(60, 90 min\)\. Raise "Max time per recipe" to at least 60 min/,
+  );
+  const split = recipesForMeal(recipes, "dinner", p);
+  assert.deepEqual(split.fits, []);
+  assert.deepEqual(split.tooLong.map((r) => r.id), ["Stew", "Lasagne"]);
+  // Raising the limit makes the plan work.
+  assert.equal(localPlan(recipes, { ...p, maxMinutes: 60 }).find((e) => e.meal === "dinner").recipe.id, "Lasagne");
+  // Meal type is compared tolerantly; a missing type means "any".
+  assert.equal(recipeMealType({ meal_type: " Dinner " }), "dinner");
+  assert.equal(recipeMealType({ meal_type: null }), "any");
+  assert.match(noRecipeReason("dinner", { tooLong: [], excluded: [] }, 40), /No dinner recipes yet/);
 });

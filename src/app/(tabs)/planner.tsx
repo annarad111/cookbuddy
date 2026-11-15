@@ -8,7 +8,8 @@ import {
   mealLabels,
   Recipe,
   Meal,
-  excludedRecipe,
+  recipesForMeal,
+  noRecipeReason,
 } from "@/domain/cooking";
 import { generatePlan, suggestRecipe } from "@/lib/cooking-ai";
 import {
@@ -291,29 +292,36 @@ export default function Planner() {
                 setManualEntry(manualEntry === entry.id ? null : entry.id)
               }
             />
-            {manualEntry === entry.id && (
-              <View style={{ gap: 8 }}>
-                {receipes
-                  .filter(
-                    (r) =>
-                      (r.meal_type === entry.meal || r.meal_type === "any") &&
-                      !excludedRecipe(r, data.preferences.excluded) &&
-                      r.time <= data.preferences.maxMinutes,
-                  )
-                  .map((r) => (
-                    <Action
-                      key={r.id}
-                      secondary
-                      label={r.title}
-                      disabled={task.busy}
-                      onPress={() => task.run(() => replace(entry.id, r))}
-                    />
-                  ))}
-                <Copy>
-                  Don't see your recipe? Check its meal type, time and excluded ingredients.
-                </Copy>
-              </View>
-            )}
+            {manualEntry === entry.id &&
+              (() => {
+                // Recipes over the time limit are still offered: picking one is a deliberate choice.
+                const split = recipesForMeal(receipes, entry.meal, data.preferences);
+                const choices = [...split.fits, ...split.tooLong];
+                return (
+                  <View style={{ gap: 8 }}>
+                    {choices.map((r) => (
+                      <Action
+                        key={r.id}
+                        secondary
+                        label={
+                          r.time > data.preferences.maxMinutes
+                            ? `${r.title} · ${r.time} min (over your ${data.preferences.maxMinutes} min)`
+                            : r.title
+                        }
+                        disabled={task.busy}
+                        onPress={() => task.run(() => replace(entry.id, r))}
+                      />
+                    ))}
+                    <Copy>
+                      {choices.length
+                        ? split.excluded.length
+                          ? `${split.excluded.length} more contain an excluded ingredient and are hidden.`
+                          : `Only recipes set to ${mealLabels[entry.meal]} or "Any meal" show up here.`
+                        : noRecipeReason(entry.meal, split, data.preferences.maxMinutes)}
+                    </Copy>
+                  </View>
+                );
+              })()}
             {!receipes.some((r) => r.id === entry.recipe.id) && (
               <Action
                 label="Save recipe to my collection"
