@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   shoppingList,
+  formatShoppingAmount,
+  ingredientKey,
   ingredientQuantity,
   scaledIngredient,
   defaultKitchen,
@@ -42,10 +44,10 @@ test("aggregates portions, kg/g conversion and duplicate pantry stock without mu
     { id: "p2", name: "piept de pui", quantity: 200, unit: "g" },
   ]);
   assert.equal(items.length, 1);
-  assert.equal(items[0].quantity, 1800);
+  assert.deepEqual(items[0].amounts, [{ quantity: 1800, unit: "g" }]);
   assert.equal(chicken.ingredients[0].quantity, 500);
 });
-test("does not merge grams and millilitres, different ingredient names or unknown text", () => {
+test("one row per ingredient: grams and millilitres stay separate totals, different names stay apart", () => {
   const r = recipe("Sos", [
     ingredient("Lapte", 100, "g"),
     ingredient("Lapte", 200, "ml"),
@@ -53,8 +55,48 @@ test("does not merge grams and millilitres, different ingredient names or unknow
     ingredient("Lapte vegetal", 100, "ml"),
   ]);
   const list = shoppingList([entry("1", r), entry("2", r)], []);
-  assert.equal(list.length, 5);
-  assert.equal(list.filter((i) => i.quantity === null).length, 2);
+  assert.deepEqual(
+    list.map((i) => [i.name, formatShoppingAmount(i)]),
+    [
+      ["Lapte", "200 g + 400 ml"],
+      ["Lapte vegetal", "200 ml"],
+      ["Sare", "to taste"],
+    ],
+  );
+});
+test("merges the same ingredient across recipes: to-taste items, plurals, descriptors and casing", () => {
+  const pepper = (id) => ({ id, name: id === "a" ? "black pepper" : "Black pepper", quantity: null, unit: "to taste", amount: "to taste" });
+  const plan = [
+    entry("1", recipe("Eggs and bacon", [pepper("a"), ingredient("Eggs", 4, "pcs")])),
+    entry("2", recipe("Chickpea salad", [pepper("b"), ingredient("Fresh tomatoes, chopped", 200, "g")])),
+    entry("3", recipe("Tuna sandwich", [pepper("c"), ingredient("Egg", 2, "pcs"), ingredient("Tomato", 150, "g")])),
+    entry("4", recipe("Burger bowl", [pepper("d"), ingredient("Large tomato", 1, "pcs")])),
+  ];
+  const list = shoppingList(plan, []);
+  const row = (key) => list.find((i) => i.key === key);
+  assert.equal(list.filter((i) => i.key === "black pepper").length, 1);
+  assert.equal(formatShoppingAmount(row("black pepper")), "to taste");
+  assert.equal(row("black pepper").recipes.length, 4);
+  assert.equal(formatShoppingAmount(row("egg")), "6 pcs");
+  assert.equal(formatShoppingAmount(row("tomato")), "350 g + 1 pcs");
+  assert.equal(row("tomato").name, "Tomato", "shortest wording wins");
+  assert.equal(row("black pepper").name, "Black pepper", "capitalised");
+  assert.equal(list.length, 3);
+  // Pantry stock covers a "to taste" need and subtracts the matching unit.
+  const withPantry = shoppingList(plan, [
+    { id: "p", name: "Black Pepper", quantity: 50, unit: "g" },
+    { id: "t", name: "tomatoes", quantity: 100, unit: "g" },
+  ]);
+  assert.equal(withPantry.find((i) => i.key === "black pepper"), undefined);
+  assert.equal(formatShoppingAmount(withPantry.find((i) => i.key === "tomato")), "250 g + 1 pcs");
+  // Large totals read as kg / l; quantity plus a to-taste use is shown once.
+  assert.equal(
+    formatShoppingAmount({ amounts: [{ quantity: 4750, unit: "g" }, { quantity: 1500, unit: "ml" }], toTaste: true, notes: [] }),
+    "4.75 kg + 1.5 l (+ to taste)",
+  );
+  assert.equal(ingredientKey("Cherries"), "cherry");
+  assert.equal(ingredientKey("Couscous"), "couscous");
+  assert.equal(ingredientKey("Peaches (ripe)"), "peach");
 });
 test("supports old amounts including fractions; refuses ambiguous ranges", () => {
   assert.deepEqual(ingredientQuantity({ amount: "1/2 kg" }), {
@@ -214,8 +256,7 @@ test("units are metric: spoons, cups, oz and lb convert to g/ml; older Romanian 
     [],
   );
   assert.equal(items.length, 1);
-  assert.equal(items[0].quantity, 50);
-  assert.equal(items[0].unit, "ml");
+  assert.deepEqual(items[0].amounts, [{ quantity: 50, unit: "ml" }]);
   assert.equal(findFood("Chicken breast").kcal, 120);
   assert.equal(findFood("Bell peppers").kcal, 26, "bell pepper, not black pepper");
   assert.equal(findFood("Black pepper").kcal, 0);

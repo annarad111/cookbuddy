@@ -242,7 +242,7 @@ test(
       await page.getByRole("checkbox").first().waitFor();
       assert.match(
         await page.getByRole("checkbox").first().innerText(),
-        /4750 g/,
+        /4.75 kg/,
       );
       await page.getByRole("checkbox").first().click();
       await page.waitForFunction(() => document.body.innerText.includes("☑"));
@@ -260,7 +260,7 @@ test(
       await page.getByText("List", { exact: true }).click();
       assert.match(
         await page.getByRole("checkbox").first().innerText(),
-        /4250 g/,
+        /4.25 kg/,
       );
       // Reset the ticks: check one item, then "Uncheck all".
       await page.getByRole("checkbox").first().click();

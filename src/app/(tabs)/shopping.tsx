@@ -3,7 +3,7 @@ import { shareText } from "@/lib/share";
 import { confirmAction } from "@/lib/confirm";
 import { View } from "react-native";
 import { useKitchenStore } from "@/store/kitchen-store";
-import { shoppingList, formatQuantity } from "@/domain/cooking";
+import { shoppingList, formatShoppingAmount } from "@/domain/cooking";
 import {
   Action,
   Card,
@@ -107,9 +107,7 @@ export default function Shopping() {
                 ]}
               >
                 {checked ? "☑" : "☐"} {i.name} —{" "}
-                {i.quantity === null
-                  ? `${i.manual || "to taste"} · check manually`
-                  : formatQuantity(i.quantity, i.unit)}
+                {formatShoppingAmount(i)}
               </Text>
               <Text style={ui.small}>{i.recipes.join(" · ")}</Text>
             </Card>
@@ -127,7 +125,7 @@ export default function Shopping() {
                   list
                     .map(
                       (i) =>
-                        `${data.checked.includes(i.key) ? "✓" : "☐"} ${i.name}: ${i.quantity === null ? (i.manual || "to taste") + " (check manually)" : formatQuantity(i.quantity, i.unit)}`,
+                        `${data.checked.includes(i.key) ? "✓" : "☐"} ${i.name}: ${formatShoppingAmount(i)}`,
                     )
                     .join("\n"),
               ),

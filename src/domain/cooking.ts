@@ -202,14 +202,49 @@ export function scaledIngredient(
     return `${i.amount || "to taste"} (check manually)`;
   return formatQuantity((q.quantity * servings) / baseServings, q.unit);
 }
+export type ShoppingAmount = { quantity: number; unit: string };
 export type ShoppingItem = {
+  /** Canonical ingredient name; also the key used for checkmarks. */
   key: string;
   name: string;
-  quantity: number | null;
-  unit: string;
-  manual?: string;
+  /** One total per unit family (g, ml, pcs…), after pantry subtraction. */
+  amounts: ShoppingAmount[];
+  /** Some recipe uses it "to taste" (no quantity). */
+  toTaste: boolean;
+  /** Free-text amounts that can't be added up (e.g. "2-3"). */
+  notes: string[];
   recipes: string[];
 };
+// Words that describe preparation or size, not a different ingredient.
+const DESCRIPTORS = new Set([
+  "fresh", "freshly", "chopped", "finely", "roughly", "diced", "sliced",
+  "minced", "grated", "shredded", "crushed", "peeled", "large", "small",
+  "medium", "big", "raw", "whole", "boneless", "skinless", "optional",
+  "ripe", "cooked", "uncooked", "about", "approx", "of",
+  "proaspat", "proaspata", "tocat", "tocata", "taiat", "taiata", "ras",
+  "rasa", "mare", "mari", "mic", "mica", "mici", "mediu", "medie",
+]);
+function singular(word: string): string {
+  if (word.length <= 3 || /(ss|us|is)$/.test(word)) return word;
+  if (word.endsWith("ies")) return word.slice(0, -3) + "y";
+  if (/(oes|ches|shes|xes)$/.test(word)) return word.slice(0, -2);
+  if (word.endsWith("s")) return word.slice(0, -1);
+  return word;
+}
+/**
+ * Canonical key for "is this the same ingredient?": case, accents, punctuation,
+ * preparation words and plurals are ignored ("Fresh Tomatoes, chopped" = "tomato").
+ */
+export function ingredientKey(name: string): string {
+  const words = normalize(name.replace(/\([^)]*\)/g, " "))
+    .replace(/[^a-z0-9 ]/g, " ")
+    .split(" ")
+    .filter((w) => w && !DESCRIPTORS.has(w));
+  if (!words.length) return normalize(name);
+  words[words.length - 1] = singular(words[words.length - 1]);
+  return words.join(" ");
+}
+const TO_TASTE = /^(to taste|dupa gust|as needed|optional|pinch|a pinch)$/;
 export function shoppingList(
   plan: PlanEntry[],
   pantry: PantryItem[],
@@ -217,42 +252,62 @@ export function shoppingList(
   const items = new Map<string, ShoppingItem>();
   for (const entry of plan)
     for (const i of entry.recipe.ingredients) {
+      if (!i.name.trim()) continue;
+      const key = ingredientKey(i.name);
+      let item = items.get(key);
+      if (!item) {
+        item = { key, name: i.name.trim(), amounts: [], toTaste: false, notes: [], recipes: [] };
+        items.set(key, item);
+      }
+      // Show the plainest wording: "Tomato" rather than "Fresh tomatoes, chopped".
+      if (i.name.trim().length < item.name.length) item.name = i.name.trim();
+      if (!item.recipes.includes(entry.recipe.title))
+        item.recipes.push(entry.recipe.title);
       const parsed = ingredientQuantity(i);
-      const q =
-        parsed && entry.recipe.servings > 0
-          ? baseQuantity(
-              (parsed.quantity * entry.servings) / entry.recipe.servings,
-              parsed.unit,
-            )
-          : null;
-      // Unstructured quantities stay separate: never guess how much "a pinch" weighs.
-      const key = q
-        ? `${normalize(i.name)}|${q.unit}`
-        : `manual|${entry.id}|${i.id}`;
-      const existing = items.get(key);
-      if (existing && q) {
-        existing.quantity! += q.quantity;
-        if (!existing.recipes.includes(entry.recipe.title))
-          existing.recipes.push(entry.recipe.title);
-      } else
-        items.set(key, {
-          key,
-          name: i.name,
-          quantity: q?.quantity ?? null,
-          unit: q?.unit ?? "",
-          manual: q ? undefined : i.amount,
-          recipes: [entry.recipe.title],
-        });
+      if (parsed && entry.recipe.servings > 0) {
+        const q = baseQuantity(
+          (parsed.quantity * entry.servings) / entry.recipe.servings,
+          parsed.unit,
+        );
+        const same = item.amounts.find((a) => a.unit === q.unit);
+        if (same) same.quantity += q.quantity;
+        else item.amounts.push(q);
+        continue;
+      }
+      // Unstructured quantities are kept as notes: never guess how much "a pinch" weighs.
+      const text = (i.amount || "").trim();
+      if (!text || TO_TASTE.test(normalize(text))) item.toTaste = true;
+      else if (!item.notes.includes(text)) item.notes.push(text);
     }
   for (const p of pantry) {
+    const item = items.get(ingredientKey(p.name));
+    if (!item) continue;
+    item.toTaste = false; // any stock covers a "to taste" amount
     const q = baseQuantity(p.quantity, p.unit);
-    const item = items.get(`${normalize(p.name)}|${q.unit}`);
-    if (item && item.quantity !== null)
-      item.quantity = Math.max(0, item.quantity - q.quantity);
+    const same = item.amounts.find((a) => a.unit === q.unit);
+    if (same) same.quantity = Math.max(0, same.quantity - q.quantity);
   }
   return [...items.values()]
-    .filter((i) => i.quantity === null || i.quantity > 0.0001)
+    .map((i) => ({
+      ...i,
+      name: i.name.charAt(0).toUpperCase() + i.name.slice(1),
+      amounts: i.amounts.filter((a) => a.quantity > 0.0001),
+    }))
+    .filter((i) => i.amounts.length || i.toTaste || i.notes.length)
     .sort((a, b) => a.name.localeCompare(b.name, "en"));
+}
+/** "4.75 kg + 2 pcs", "to taste", "300 g (+ to taste)". */
+export function formatShoppingAmount(item: ShoppingItem): string {
+  const parts = item.amounts.map((a) =>
+    a.unit === "g" && a.quantity >= 1000
+      ? formatQuantity(a.quantity / 1000, "kg")
+      : a.unit === "ml" && a.quantity >= 1000
+        ? formatQuantity(a.quantity / 1000, "l")
+        : formatQuantity(a.quantity, a.unit),
+  );
+  parts.push(...item.notes);
+  if (!parts.length) return "to taste";
+  return parts.join(" + ") + (item.toTaste ? " (+ to taste)" : "");
 }
 export function excludedRecipe(recipe: Recipe, excluded: string): boolean {
   const terms = excluded
