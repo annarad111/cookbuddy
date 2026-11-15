@@ -127,6 +127,7 @@ export default function RootLayout() {
         />
         <Stack.Screen name="receipe/[id]" />
         <Stack.Screen name="cook/[id]" options={{ presentation: "fullScreenModal" }} />
+        <Stack.Screen name="onboarding" options={{ presentation: "fullScreenModal", gestureEnabled: false }} />
         <Stack.Screen
           name="new-receipe"
           options={{

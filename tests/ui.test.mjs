@@ -214,9 +214,26 @@ test(
         { userId, jwt },
       );
       await page.goto(base + "/");
+      // A new account sees the welcome tour once.
+      await page.getByText("Hi, I'm your CookBuddy!", { exact: true }).waitFor();
+      await page.getByRole("button", { name: "Next", exact: true }).click();
+      await page.getByText("2 / 8", { exact: true }).waitFor();
+      await page.getByRole("button", { name: "Skip", exact: true }).click();
       await page.getByText("Protein pancakes", { exact: true }).waitFor();
+      await page.reload();
+      await page.getByText("Protein pancakes", { exact: true }).waitFor();
+      await page.waitForTimeout(800);
+      assert.equal(
+        await page.getByText("Hi, I'm your CookBuddy!", { exact: true }).count(),
+        0,
+        "the tour is not shown again",
+      );
       await page.getByRole("tab", { name: /Plan$/ }).click();
       await page.getByText("What are we cooking?", { exact: true }).waitFor();
+      // The info bubble explains the current tab.
+      await page.getByRole("button", { name: "Help: Plan", exact: true }).click();
+      await page.getByText("Plan the week", { exact: true }).waitFor();
+      await page.getByRole("button", { name: "Got it", exact: true }).click();
       await page
         .getByRole("button", {
           name: "Plan from my recipes · no AI",

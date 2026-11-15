@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Text, View } from "react-native";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import { shareText } from "@/lib/share";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth-store";
@@ -195,6 +196,11 @@ export default function Profile() {
           Excluded ingredients are matched by name; always check labels if there are allergies. Unreadable quantities from imports need a manual check.
         </Copy>
       </Card>
+      <Action
+        secondary
+        label="Show the app tour 🐰"
+        onPress={() => router.push("/onboarding")}
+      />
       <Action
         secondary
         label="Log out"
